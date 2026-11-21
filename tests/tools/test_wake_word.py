@@ -40,7 +40,7 @@ def test_config_defaults_and_clamping():
     assert ww._sensitivity({"sensitivity": "nope"}) == ww._DEFAULTS["sensitivity"]
     assert ww._sensitivity({}) == ww._DEFAULTS["sensitivity"]
     assert ww.wake_phrase({"phrase": "hey hermes"}) == "hey hermes"
-    assert ww.wake_phrase({}) == "hey hermes"
+    assert ww.wake_phrase({}) == "hey there"
 
 
 def test_wake_surface_enabled_gate():
@@ -87,8 +87,9 @@ def test_loaded_wake_defaults_resolve_supported_provider(tmp_path, monkeypatch, 
     assert cfg["provider"] == "auto"
     supported = partial(extra_supported, environment={"sys_platform": system, "platform_machine": machine},
                         importable=lambda _: False)
-    assert ww._provider(cfg, supported=supported) == expected
-    assert ww._provider({}, supported=supported) == expected
+    assert ww._provider(cfg, supported=supported) == "sherpa"
+    assert ww._provider({}, supported=supported) == "sherpa"
+    assert ww._provider({"phrase": "hey hermes"}, supported=supported) == expected
     assert supported(ww._PROVIDERS[expected][1])
     assert not ww.wake_surface_enabled("gui", cfg)
     assert cfg["provider"] == "auto"

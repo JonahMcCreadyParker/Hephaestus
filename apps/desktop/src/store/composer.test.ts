@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   $composerAttachments,
   $restoredDraftNotice,
-  $voiceConversationStartRequest,
+  $wakeDictationStartRequest,
   addComposerAttachment,
   adoptGoneSessionDraft,
   announceGoneSessionDraft,
@@ -16,27 +16,27 @@ import {
   mainComposerScope,
   migrateSessionDraft,
   removeComposerAttachment,
-  requestVoiceConversationStart,
+  requestWakeDictationStart,
   revokeAttachmentPreviewUrls,
   SESSION_DRAFTS_STORAGE_KEY,
   setComposerTerminalSelection,
   stashSessionDraft,
   takeSessionDraft,
-  takeVoiceConversationStart,
+  takeWakeDictationStart,
   undoRestoredDraft,
   updateComposerAttachment
 } from './composer'
 
-describe('voice conversation start requests', () => {
+describe('wake dictation start requests', () => {
   it('latches each request until the main composer consumes it once', () => {
-    requestVoiceConversationStart()
-    const first = $voiceConversationStartRequest.get()
+    requestWakeDictationStart()
+    const first = $wakeDictationStartRequest.get()
 
-    expect(takeVoiceConversationStart(first)).toBe(true)
-    expect(takeVoiceConversationStart(first)).toBe(false)
+    expect(takeWakeDictationStart(first)).toBe(true)
+    expect(takeWakeDictationStart(first)).toBe(false)
 
-    requestVoiceConversationStart()
-    expect(takeVoiceConversationStart($voiceConversationStartRequest.get())).toBe(true)
+    requestWakeDictationStart()
+    expect(takeWakeDictationStart($wakeDictationStartRequest.get())).toBe(true)
   })
 })
 

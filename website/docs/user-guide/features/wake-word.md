@@ -1,10 +1,10 @@
 ---
 sidebar_position: 11
 title: "Wake Word"
-description: "Hands-free 'Hey Hermes' wake word — start a voice session by speaking, the 'Hey Siri' way"
+description: "Hands-free 'Hey there' wake word — start a voice session by speaking, the 'Hey Siri' way"
 ---
 
-# Wake Word ("Hey Hermes")
+# Wake Word ("Hey there")
 
 The wake word turns Hermes into a hands-free assistant across the CLI, TUI, and
 desktop app: with one setting on, Hermes listens in the background for a spoken
@@ -27,7 +27,7 @@ to the agent.
 3. Your speech is transcribed and sent to the agent. After it replies, the
    listener resumes automatically and waits for the next wake word.
 
-It is **off by default** — nothing listens until you turn it on.
+On Desktop, the wake phrase starts composer dictation. A pause ends the recording and the transcript lands in the draft for review. It is **off by default** — nothing listens until you turn it on.
 
 On the desktop app, a hands-free voice conversation can be ended by simply
 **saying "stop"** (or "never mind", "goodbye", "cancel", "that's all") — the
@@ -80,7 +80,7 @@ backend process.
 | **sherpa** | Free | None | Open-vocabulary detection for typed phrases. Downloads an English model on first use. Supports native Windows ARM64. |
 | **Porcupine** | Free tier / paid | `PORCUPINE_ACCESS_KEY` | Picovoice engine; built-in keywords + custom `.ppn` files |
 
-The default provider is **`auto`**. It selects the first platform-supported
+The default phrase is **"hey there"**. With **`auto`**, Hermes uses sherpa to recognize that phrase. For legacy phrases, automatic selection chooses the first platform-supported
 engine in this order: **openWakeWord → sherpa → Porcupine**. The platform is
 that of the Python backend, not a remote desktop client:
 
@@ -94,7 +94,7 @@ Existing explicit settings are not migrated. To opt into automatic selection,
 run `hermes config set wake_word.provider auto`. Wake detection stays **off**
 until you enable it.
 
-The default phrase label is **"hey hermes"**. For openWakeWord, Hermes includes
+To keep **"hey hermes"**, set `wake_word.phrase` to that phrase and select `openwakeword` or `auto`. For openWakeWord, Hermes includes
 its trained TFLite model.
 The `pyopen-wakeword` package includes the shared feature-extraction models, so
 this engine does not download models when it starts.

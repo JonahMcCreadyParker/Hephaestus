@@ -2,6 +2,9 @@ import { act, cleanup, render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { requestWakeDictationStart } from '@/store/composer'
+import { resumeWakeAfterVoice } from '@/store/wake-word'
+
 import { markActiveComposer, requestComposerDictation, requestVoiceToggle } from '../focus'
 import { ComposerScopeProvider, ComposerSurfaceProvider, MAIN_COMPOSER_SCOPE } from '../scope'
 
@@ -10,12 +13,14 @@ import { useComposerVoice } from './use-composer-voice'
 const mocks = vi.hoisted(() => ({
   conversationEnabled: [] as boolean[],
   dictate: vi.fn(),
-  endConversation: vi.fn(async () => undefined)
+  endConversation: vi.fn(async () => undefined),
+  startDictation: vi.fn()
 }))
 
 vi.mock('./use-voice-recorder', () => ({
   useVoiceRecorder: () => ({
     dictate: mocks.dictate,
+    start: mocks.startDictation,
     voiceActivityState: {
       elapsedSeconds: 0,
       levelStore: { get: () => 0, listen: () => () => {}, set: () => {} },
@@ -130,12 +135,28 @@ afterEach(() => {
   cleanup()
   document.body.innerHTML = ''
   mocks.dictate.mockClear()
+  mocks.startDictation.mockClear()
   mocks.endConversation.mockClear()
   mocks.conversationEnabled.length = 0
   markActiveComposer('main')
 })
 
 describe('composer voice shortcuts', () => {
+  it('starts wake dictation in the main draft and re-arms wake when the take settles', async () => {
+    renderComposers(
+      <>
+        {mountComposer('main', false)}
+        {mountComposer('tile:front', false)}
+      </>
+    )
+    await act(async () => requestWakeDictationStart())
+
+    expect(mocks.startDictation).toHaveBeenCalledTimes(1)
+    expect(mocks.conversationEnabled).not.toContain(true)
+    expect(resumeWakeAfterVoice).not.toHaveBeenCalled()
+    mocks.startDictation.mock.calls[0][0]()
+    expect(resumeWakeAfterVoice).toHaveBeenCalledTimes(1)
+  })
   it('dictates only on the active visible target and ignores a disabled target', async () => {
     renderComposers(
       <>

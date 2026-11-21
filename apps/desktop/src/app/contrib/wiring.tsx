@@ -41,7 +41,7 @@ import { activateWakeIndicator } from '@/lib/wake-indicator'
 import { playWakeSound } from '@/lib/wake-sound'
 import { $billingSettingsRequest } from '@/store/billing-block'
 import { $desktopBoot } from '@/store/boot'
-import { requestVoiceConversationStart } from '@/store/composer'
+import { requestWakeDictationStart } from '@/store/composer'
 import { $activeConnectionId } from '@/store/connections'
 import { $cronReviewRequest, setCronFocusJobId } from '@/store/cron'
 import { reconnectGateway } from '@/store/gateway-reconnect'
@@ -834,7 +834,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
       if (event.type === 'wake.detected') {
         const payload = event.payload as { profile?: null | string; start_new_session?: boolean } | undefined
 
-        // Free the Mac mic so voice conversation can open getUserMedia.
+        // Free client capture so dictation can open the mic.
         // Server already pauses the detector lease; this stops client PCM feed.
         stopClientCapture()
 
@@ -846,7 +846,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
         // Multi-profile routing: a wake phrase enrolled by another profile
         // re-homes the gateway to that profile first (live swap — same path
         // as clicking it in the profile rail), then opens the fresh session
-        // and starts voice there.
+        // and starts dictation there.
         const targetProfile = payload?.profile?.trim()
         const activeProfile = normalizeProfileKey($activeGatewayProfile.get())
 
@@ -863,7 +863,7 @@ export function ContribWiring({ children }: { children: ReactNode }) {
           startFreshSessionDraft()
         }
 
-        requestVoiceConversationStart()
+        requestWakeDictationStart()
 
         return
       }

@@ -7,6 +7,7 @@ import { fetchVoiceClientConfigFor } from '@/lib/voice-client-direct'
 import { type DictationStreamSession, openDictationStream } from '@/lib/voice-stream'
 import { recordFeatureUse } from '@/store/desktop-metrics'
 import { notify, notifyError } from '@/store/notifications'
+import { $voiceSilenceMs } from '@/store/voice-prefs'
 
 import { useComposerScope } from '../scope'
 import type { VoiceActivityState, VoiceStatus } from '../types'
@@ -29,6 +30,7 @@ interface VoiceRecorderOptions {
 interface Dictation {
   owner: ResolvedOwner
   warmup: Promise<void>
+  onSettled?: () => void
   /** Live STT session (stt.streaming): resolves to null when the host has no live wire. */
   live?: () => Promise<DictationStreamSession | null>
 }
@@ -81,6 +83,7 @@ export function useVoiceRecorder({
       if (dictation) {
         void syncSttLease(VOICE_INPUT_LEASE, false, dictation.owner)
         void dictation.live?.().then(session => session?.cancel())
+        dictation.onSettled?.()
       }
     },
     []
@@ -165,29 +168,39 @@ export function useVoiceRecorder({
     setPartial('')
     void dictation.live?.().then(session => session?.cancel())
     void syncSttLease(VOICE_INPUT_LEASE, false, dictation.owner)
+    dictation.onSettled?.()
   }
 
-  const start = async () => {
+  const start = async (onSettled?: () => void) => {
     if (!onTranscribeAudio) {
       notify({ kind: 'warning', title: voiceCopy.unavailable, message: voiceCopy.transcriptionUnavailable })
+      onSettled?.()
 
       return
     }
 
     if (dictationRef.current) {
+      dictationRef.current.onSettled ??= onSettled
+
       return
     }
 
     const owner = resolveOwnerNow(ownerRef.current)
     const stream = liveStream(owner)
-    const dictation: Dictation = { live: stream.session, owner, warmup: Promise.resolve() }
+    const dictation: Dictation = { live: stream.session, onSettled, owner, warmup: Promise.resolve() }
     dictationRef.current = dictation
 
     try {
       await handle.start({
         onError: error => notifyError(error, voiceCopy.recordingFailed),
         onPcm: stream.push,
-        onPcmRate: stream.open
+        onPcmRate: stream.open,
+        ...(onSettled && {
+          idleSilenceMs: 12_000,
+          onSilence: () => void stop(),
+          silenceLevel: 0.075,
+          silenceMs: $voiceSilenceMs.get()
+        })
       })
 
       if (dictationRef.current !== dictation) {
@@ -270,5 +283,5 @@ export function useVoiceRecorder({
     status: voiceStatus
   }
 
-  return { dictate, voiceActivityState, voiceStatus }
+  return { dictate, start, voiceActivityState, voiceStatus }
 }

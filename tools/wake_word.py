@@ -76,7 +76,7 @@ class WakeWordInUse(RuntimeError):
 # frames via wake.feed), or "auto" (local when a device exists, else client).
 _DEFAULTS: dict[str, Any] = {
     "enabled": False, "surface": "auto", "input_device": None, "capture": "auto",
-    "provider": "auto", "phrase": "hey hermes", "sensitivity": 0.6,
+    "provider": "auto", "phrase": "hey there", "sensitivity": 0.6,
     # detached-spawn: ok — not a spawn: the wake-word config key (fresh chat session on wake)
     "confirmation_frames": _DEFAULT_CONFIRMATION_FRAMES, "start_new_session": True,
 }
@@ -119,6 +119,8 @@ def _provider(cfg: dict[str, Any], *, supported: Callable[[str], bool] | None = 
     provider = str(_get(cfg, "provider")).strip().lower() or "auto"
     if provider != "auto":
         return provider
+    if wake_phrase(cfg).strip().casefold() == _DEFAULTS["phrase"]:
+        return "sherpa"  # The bundled classifier recognizes a different phrase.
     if supported is None:
         from pm.extras import extra_supported
         supported = extra_supported
@@ -141,9 +143,9 @@ def _confirmation_frames(cfg: dict[str, Any]) -> int:
 
 
 def wake_phrase(cfg: Optional[dict[str, Any]] = None) -> str:
-    """Human-facing wake phrase label (purely cosmetic; engine keys detection)."""
+    """Configured phrase that sherpa detects and every surface displays."""
     cfg = cfg if cfg is not None else load_wake_word_config()
-    return str(_get(cfg, "phrase")) or "hey hermes"
+    return str(_get(cfg, "phrase")) or _DEFAULTS["phrase"]
 
 
 def resolve_capture_mode(cfg: Optional[dict[str, Any]] = None, *, prefer_client: bool = False,

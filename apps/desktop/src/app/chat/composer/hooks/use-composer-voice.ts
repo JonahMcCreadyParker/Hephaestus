@@ -14,7 +14,7 @@ import {
 import { CONVERSATION_LEASE, READ_ALOUD_LEASE, syncTtsLease } from '@/lib/tts-lease'
 import { toLiveHistory } from '@/lib/voice-live'
 import { clearWakeIndicator, syncWakeIndicatorWithVoice } from '@/lib/wake-indicator'
-import { $voiceConversationStartRequest, takeVoiceConversationStart } from '@/store/composer'
+import { $wakeDictationStartRequest, takeWakeDictationStart } from '@/store/composer'
 import { resetBrowseState } from '@/store/composer-input-history'
 import { recordFeatureUse } from '@/store/desktop-metrics'
 import { $gateway } from '@/store/gateway'
@@ -104,7 +104,7 @@ export function useComposerVoice({
   busyRef.current = busy
   const ownsWakeIndicatorRef = useRef(false)
   const previousSessionIdRef = useRef(sessionId)
-  const voiceStartRequest = useStore($voiceConversationStartRequest)
+  const wakeDictationRequest = useStore($wakeDictationStartRequest)
 
   // eslint-disable-next-line no-restricted-syntax -- session-id adopt token, not an atom mirror
   useEffect(() => {
@@ -112,7 +112,7 @@ export function useComposerVoice({
     previousSessionIdRef.current = sessionId
   }, [sessionId])
 
-  const { dictate, voiceActivityState, voiceStatus } = useVoiceRecorder({
+  const { dictate, start, voiceActivityState, voiceStatus } = useVoiceRecorder({
     focusInput,
     maxRecordingSeconds,
     onTranscript: insertText,
@@ -338,10 +338,13 @@ export function useComposerVoice({
   )
 
   useEffect(() => {
-    if (target === 'main' && !disabled && takeVoiceConversationStart(voiceStartRequest) && !voiceConversationActive) {
-      activateConversation()
+    if (target === 'main' && !disabled && !voiceConversationActive && takeWakeDictationStart(wakeDictationRequest)) {
+      void start(() => {
+        clearWakeIndicator()
+        void resumeWakeAfterVoice()
+      })
     }
-  }, [activateConversation, disabled, target, voiceConversationActive, voiceStartRequest])
+  }, [disabled, start, target, voiceConversationActive, wakeDictationRequest])
 
   const resumeWakeIfPaused = useCallback(() => {
     if (!wakePausedRef.current) {
