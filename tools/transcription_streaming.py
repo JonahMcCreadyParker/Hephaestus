@@ -8,6 +8,7 @@ socket, so callers never block on network I/O while audio is captured.
 
 Built-in wires (live-verified against each vendor except where noted):
 
+- ``local``: on-device faster-whisper with periodic previews and a full-take final decode.
 - ``openai``: Realtime ``type: transcription`` session (``stt.openai.streaming_model``, default
   ``gpt-live-transcribe``, the one model that emits deltas before the turn is committed). The
   endpoint requires >= 24 kHz input, so PCM is resampled 16 k -> 24 k here.
@@ -41,7 +42,7 @@ logger = logging.getLogger(__name__)
 INPUT_RATE = 16000  # the contract every caller feeds
 DEFAULT_OPENAI_STREAMING_MODEL = "gpt-live-transcribe"
 ELEVENLABS_REALTIME_MODEL = "scribe_v2_realtime"
-STREAMING_PROVIDERS = ("openai", "xai", "elevenlabs")
+STREAMING_PROVIDERS = ("local", "openai", "xai", "elevenlabs")
 _FINALIZE_TIMEOUT_S = 20.0
 _CONNECT_TIMEOUT_S = 10.0
 
@@ -175,6 +176,54 @@ class StreamingSession:
 
     def _session(self) -> dict[str, Any]:  # pragma: no cover - overridden
         raise NotImplementedError
+
+
+class _LocalWhisperSession(StreamingSession):
+    """Decode bounded windows for previews and the full take for the final text."""
+
+    provider = "local"
+    _UPDATE_BYTES = 2 * INPUT_RATE * 2  # preview after every two seconds of new audio
+    _WINDOW_BYTES = 10 * INPUT_RATE * 2
+    _MAX_BYTES = 600 * INPUT_RATE * 2  # Desktop recording ceiling
+
+    def __init__(self, model: str, language: Optional[str], prompt: Optional[str],
+                 on_partial: Optional[PartialCallback]) -> None:
+        super().__init__(on_partial)
+        self._model = model
+        self._language = language
+        self._prompt = prompt
+
+    def _decode(self, pcm: bytearray) -> dict[str, Any]:
+        import numpy as np
+        from tools.transcription_tools import _transcribe_local
+
+        samples = np.frombuffer(pcm, dtype="<i2", count=len(pcm) // 2).astype(np.float32)
+        samples /= 32768.0
+        return _transcribe_local(samples, self._model, language=self._language, prompt=self._prompt)
+
+    def _session(self) -> dict[str, Any]:
+        audio = bytearray()
+        completed: list[str] = []
+        offset = last_preview = 0
+        while not self._cancelled.is_set():
+            chunk = self._take_audio(block=True, timeout=0.1)
+            if chunk is None:
+                break
+            if len(audio) + len(chunk) > self._MAX_BYTES:
+                return self._error("local live transcription exceeded the recording limit")
+            audio.extend(chunk)
+            if self._on_partial is None or len(audio) - last_preview < self._UPDATE_BYTES:
+                continue
+            while len(audio) - offset >= self._WINDOW_BYTES:
+                end = offset + self._WINDOW_BYTES
+                completed.append(self._decode(audio[offset:end]).get("transcript", ""))
+                offset = end
+            tail = self._decode(audio[offset:]).get("transcript", "") if offset < len(audio) else ""
+            self._set_partial(" ".join(filter(None, [*completed, tail])))
+            last_preview = len(audio)
+        if self._cancelled.is_set():
+            return self._error("cancelled")
+        return self._decode(audio) if audio else {"success": True, "transcript": "", "provider": self.provider}
 
 
 class _WebSocketSession(StreamingSession):
@@ -471,6 +520,8 @@ def _builtin_session(provider: str, stt_config: dict[str, Any], language: Option
     from tools import transcription_tools as tt
     raw_section = stt_config.get(provider)
     section: dict[str, Any] = raw_section if isinstance(raw_section, dict) else {}
+    if provider == "local":
+        return _LocalWhisperSession(tt._builtin_model_name("local", stt_config, None), language, prompt, on_partial)
     if provider == "openai":
         creds = _openai_credentials()
         if creds is None:
@@ -528,7 +579,7 @@ def open_streaming_session(on_partial: Optional[PartialCallback] = None,
     if not streaming_enabled(cfg):
         return None
     provider = tt._get_provider(cfg)
-    if provider in ("none", "local", "local_command"):
+    if provider in ("none", "local_command"):
         return None
     language = tt._resolve_stt_language(provider, cfg, extra_keys=("language_code",) if provider == "elevenlabs" else ())
     prompt = str(cfg.get("prompt") or "").strip() or None

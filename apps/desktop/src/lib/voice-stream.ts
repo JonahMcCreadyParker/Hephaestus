@@ -130,8 +130,7 @@ export async function openDictationStream(
         ws.send(JSON.stringify({ eos: true }))
       }),
     cancel: () => {
-      settled = true
-      pending = null
+      settle(new Error('live transcription cancelled'))
       ws.close()
     }
   }

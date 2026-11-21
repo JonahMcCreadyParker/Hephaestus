@@ -19,7 +19,11 @@ import importlib.util as _ilu
 from contextlib import ExitStack
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from numpy import float32
+    from numpy.typing import NDArray
 
 from utils import is_truthy_value
 from tools.transcription_common import (
@@ -366,7 +370,8 @@ def _replace_cached_model_on_cpu(model_name: str):
 
 
 def _transcribe_local(
-    file_path: str, model_name: str, *, language: Optional[str] = None, prompt: Optional[str] = None
+    file_path: "str | NDArray[float32]", model_name: str, *,
+    language: Optional[str] = None, prompt: Optional[str] = None,
 ) -> dict[str, Any]:
     """Transcribe using faster-whisper (local, free)."""
     if not _HAS_FASTER_WHISPER and not _try_lazy_install_stt():
@@ -410,7 +415,8 @@ def _transcribe_local(
             segments = list(segments)
         transcript = _join_confident_segments(segments, local_cfg)
         logger.info("Transcribed %s via local whisper (%s, lang=%s, %.1fs audio)",
-                    Path(file_path).name, model_name, info.language, info.duration)
+                    Path(file_path).name if isinstance(file_path, (str, os.PathLike)) else "live audio",
+                    model_name, info.language, info.duration)
         _touch_transcription_time()
         idle_timeout = _get_idle_unload_seconds(local_cfg)
         if idle_timeout > 0:

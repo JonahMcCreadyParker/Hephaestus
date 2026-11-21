@@ -176,11 +176,11 @@ Say **"stop"** — and nothing else — to end the voice conversation hands-free
 
 ### Live transcription (streaming STT)
 
-Set `stt.streaming: true` to transcribe while you speak instead of after you stop. Partial text appears as you talk (in the classic CLI and TUI input placeholder, and in the Desktop dictation pill), and the transcript is ready when you stop speaking instead of after a full upload.
+Set `stt.streaming: true` to transcribe while you speak instead of after you stop. Partial text appears as you talk in the classic CLI and TUI input placeholder or inside the Desktop composer. Desktop adds the final text to your editable draft when you stop.
 
 ```yaml
 stt:
-  provider: openai        # or xai, elevenlabs
+  provider: openai        # or local, xai, elevenlabs
   streaming: true
   openai:
     streaming_model: gpt-live-transcribe   # the default; the one OpenAI model that streams text mid-utterance
@@ -188,12 +188,13 @@ stt:
 
 | Provider | Live endpoint | Notes |
 |---|---|---|
+| `local` | On-device faster-whisper | Previews update in roughly two-second steps. The complete take is decoded again for the final draft. |
 | `openai` | Realtime transcription session | Needs your own `OPENAI_API_KEY`; the Nous-managed audio gateway serves file transcription only |
 | `xai` | `wss://api.x.ai/v1/stt` | Needs `XAI_API_KEY` (the Grok OAuth login is not used for live STT) |
 | `elevenlabs` | Scribe v2 realtime | `ELEVENLABS_API_KEY` |
 | plugin | `TranscriptionProvider.streaming_capable` | Plugins opt in with `open_stream_session()` |
 
-Live transcription covers CLI and TUI voice mode and Desktop dictation. Local whisper, Groq, Mistral and DeepInfra keep using the file path. If a live session can't open, or fails mid-recording, Hermes transcribes the recording as usual, so turning this on never loses a take.
+Live transcription covers CLI and TUI voice mode and Desktop dictation. Local command backends, Groq, Mistral and DeepInfra keep using the file path. If a live session can't open, or fails mid-recording, Hermes transcribes the recording as usual, so turning this on never loses a take.
 
 ### Streaming TTS
 

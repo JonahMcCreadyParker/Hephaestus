@@ -31,6 +31,7 @@ interface Dictation {
   owner: ResolvedOwner
   warmup: Promise<void>
   onSettled?: () => void
+  stopping?: boolean
   /** Live STT session (stt.streaming): resolves to null when the host has no live wire. */
   live?: () => Promise<DictationStreamSession | null>
 }
@@ -90,13 +91,19 @@ export function useVoiceRecorder({
   )
 
   const stop = async () => {
-    clearTimers()
     const dictation = dictationRef.current
-    const result = await handle.stop()
-    const live = () => dictation !== null && dictationRef.current === dictation
 
-    if (!dictation || !live()) {
-      return // unmounted (or never started) while the recorder stopped
+    if (!dictation || dictation.stopping) {
+      return
+    }
+
+    dictation.stopping = true
+    clearTimers()
+    const result = await handle.stop()
+    const live = () => dictationRef.current === dictation
+
+    if (!live()) {
+      return
     }
 
     if (!result || !onTranscribeAudio) {
@@ -119,8 +126,13 @@ export function useVoiceRecorder({
         return
       }
 
-      const transcript =
-        (await liveTranscript(dictation)) ?? (await onTranscribeAudio(result.audio, dictation.owner)).trim()
+      const previewFinal = await liveTranscript(dictation)
+
+      if (!live()) {
+        return
+      }
+
+      const transcript = previewFinal ?? (await onTranscribeAudio(result.audio, dictation.owner)).trim()
 
       if (!live()) {
         return
@@ -186,7 +198,13 @@ export function useVoiceRecorder({
     }
 
     const owner = resolveOwnerNow(ownerRef.current)
-    const stream = liveStream(owner)
+
+    const stream = liveStream(owner, text => {
+      if (dictationRef.current === dictation) {
+        setPartial(text)
+      }
+    })
+
     const dictation: Dictation = { live: stream.session, onSettled, owner, warmup: Promise.resolve() }
     dictationRef.current = dictation
 
@@ -234,7 +252,7 @@ export function useVoiceRecorder({
   // Live dictation plumbing for one take: chunks captured before the socket opens are buffered
   // (bounded) and flushed, so the first words reach the provider too. `session()` is null when the
   // host has no live wire, or when the meter never reported a rate (no PCM tap this take).
-  const liveStream = (owner: ResolvedOwner) => {
+  const liveStream = (owner: ResolvedOwner, onPartial: (text: string) => void) => {
     let session: DictationStreamSession | null = null
     let settled = false
     let buffered: ArrayBuffer[] = []
@@ -243,7 +261,10 @@ export function useVoiceRecorder({
     const open = (sampleRate: number) => {
       opening = (async () => {
         const config = await fetchVoiceClientConfigFor(owner).catch(() => null)
-        const opened = config?.stt.streaming ? await openDictationStream(owner, sampleRate, setPartial) : null
+
+        const opened = config?.stt.streaming
+          ? await openDictationStream(owner, sampleRate, onPartial).catch(() => null)
+          : null
 
         for (const chunk of opened ? buffered : []) {
           opened!.pushAudio(chunk)

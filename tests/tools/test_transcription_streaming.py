@@ -11,6 +11,41 @@ from tools import transcription_streaming as ts
 from tools import voice_mode
 
 
+def test_local_stream_previews_while_recording_and_finalizes_the_full_take(monkeypatch):
+    from tools import transcription_tools as tt
+
+    decoded: list[int] = []
+
+    def decode(self, pcm):
+        samples = len(pcm) // 2
+        decoded.append(samples)
+        return {"success": True, "transcript": f"{samples} samples", "provider": "local"}
+
+    monkeypatch.setattr(tt, "_get_provider", lambda cfg: "local")
+    monkeypatch.setattr(ts._LocalWhisperSession, "_decode", decode)
+    config = {"streaming": True, "local": {"model": "base"}}
+    seen_partial = threading.Event()
+    partials: list[str] = []
+
+    def on_partial(text):
+        partials.append(text)
+        seen_partial.set()
+
+    assert ts.streaming_available(config)
+    session = ts.open_streaming_session(on_partial, config)
+    assert session is not None
+    try:
+        session.set_input_rate(48_000)
+        session.push_audio(b"\x01\x00" * (2 * 48_000))
+        assert seen_partial.wait(5)
+        assert partials == ["32000 samples"]
+        session.push_audio(b"\x02\x00" * 48_000)
+        assert session.finalize(timeout=5)["transcript"] == "48000 samples"
+        assert decoded == [32_000, 48_000]
+    finally:
+        session.cancel()
+
+
 def _xai_like_server(received: list):
     """xAI ``/v1/stt`` shape: created first, a partial per audio frame, stitched final on audio.done."""
 

@@ -1512,7 +1512,14 @@ export function ChatBar({
                       {contextMenu}
                       <ContribSlot area={COMPOSER_AREAS.leading} />
                     </div>
-                    <div className="min-w-0 [grid-area:input]">{input}</div>
+                    <div className="min-w-0 [grid-area:input]">
+                      {input}
+                      {voiceActivityState.partial && (
+                        <div className="flex max-h-28 flex-col-reverse overflow-y-auto text-sm text-muted-foreground">
+                          <div className="shrink-0 wrap-anywhere whitespace-pre-wrap">{voiceActivityState.partial}</div>
+                        </div>
+                      )}
+                    </div>
                     {/* `justify-end` packs contributed actions and the send cluster
                       together on the right. The cluster must not carry its own
                       `ml-auto`: in the stacked layout the auto margin absorbs the
