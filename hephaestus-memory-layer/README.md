@@ -16,4 +16,4 @@ hermes mdvault status
 
 In the mdvault setup, select the resolved vault path, enable automatic recall, set the write folder to `inbox`, and enable built-in memory mirroring if you want Hermes memory updates copied into the vault. Use the Obsidian skill for direct note editing and mdvault for per-turn recall.
 
-Hephaestus is public. Review notes and mirrored memory before staging them. The mdvault plugin and its machine-specific configuration live in the local Hermes profile.
+Git tracks this guide and the folder placeholders. Generated notes, mirrored memory, attachments, and local Obsidian settings stay in the local vault. Put new notes in `inbox/`, confirmed decisions in `decisions/`, and reusable material in `reference/`. The mdvault plugin and its machine-specific configuration live in the local Hermes profile.

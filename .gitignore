@@ -339,3 +339,16 @@ infografico/
 /pm/.lock.json.lock
 
 apps/desktop/.dist-build*
+
+# Keep the Obsidian vault scaffold in Git and generated content local.
+/hephaestus-memory-layer/*
+!/hephaestus-memory-layer/README.md
+!/hephaestus-memory-layer/inbox/
+/hephaestus-memory-layer/inbox/*
+!/hephaestus-memory-layer/inbox/.gitkeep
+!/hephaestus-memory-layer/decisions/
+/hephaestus-memory-layer/decisions/*
+!/hephaestus-memory-layer/decisions/.gitkeep
+!/hephaestus-memory-layer/reference/
+/hephaestus-memory-layer/reference/*
+!/hephaestus-memory-layer/reference/.gitkeep
