@@ -616,6 +616,10 @@ export function useKeybinds(deps: KeybindRuntimeDeps): void {
 
         event.preventDefault()
 
+        if (actionId === 'composer.dictate' && event.repeat) {
+          return
+        }
+
         if (handler() === false && keybindAction(actionId)?.passthrough) {
           continue
         }

@@ -147,11 +147,9 @@ export const KEYBIND_ACTIONS: readonly KeybindActionMeta[] = [
   // sidebar chord. Ship ⌃⌥V there ("v" for voice) instead of stealing mod+b
   // or leaving the action unbound.
   { id: 'composer.voice', category: 'composer', defaults: isMacPlatform() ? ['ctrl+b'] : ['mod+alt+v'] },
-  // Dictation is intentionally unbound: it is available for users who prefer
-  // a keyboard trigger without claiming a chord from text entry by default.
-  { id: 'composer.dictate', category: 'composer', defaults: [] },
+  { id: 'composer.dictate', category: 'composer', defaults: [isMacPlatform() ? 'ctrl+shift+d' : 'mod+shift+d'] },
   // Reasoning level up/down — one notch through off → minimal → … → xhigh,
-  // clamped at the ends (#71627). Unbound like dictate: the chords a user
+  // clamped at the ends (#71627). Unbound: the chords a user
   // picks (Alt+., Ctrl+Alt+↑, Numpad +/- …) are too personal to claim by
   // default. `editableTargetPolicy` lets a MODIFIED combo fire while the
   // composer has focus; bare/shift-only rebinds stay typing-safe.

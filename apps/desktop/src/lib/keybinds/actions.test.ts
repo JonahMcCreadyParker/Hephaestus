@@ -10,7 +10,7 @@ import {
   keybindAction,
   keybindActionAllowedInEditableTarget
 } from './actions'
-import { canonicalizeCombo } from './combo'
+import { actionAllowedInInput, canonicalizeCombo, comboFromEvent } from './combo'
 
 // Relationship checks between the action table and its consumers, not the
 // specific chord or wording any one action ships with.
@@ -37,11 +37,12 @@ describe('KEYBIND_ACTIONS', () => {
     expect(KEYBIND_ACTIONS.filter(candidate => candidate.id === 'session.archive')).toHaveLength(1)
   })
 
-  it('registers dictation with an English label and no default chord', () => {
-    const action = keybindAction('composer.dictate')
+  it('routes Control+Shift+D to dictation while typing', () => {
+    const event = new KeyboardEvent('keydown', { code: 'KeyD', key: 'D', ctrlKey: true, shiftKey: true })
 
-    expect(action).toMatchObject({ category: 'composer', defaults: [] })
-    expect(defaultBindings()['composer.dictate']).toEqual([])
+    const combo = comboFromEvent(event)!
+    expect(defaultBindings()['composer.dictate']).toContain(combo)
+    expect(actionAllowedInInput('composer.dictate', combo)).toBe(true)
     expect(en.keybinds.actions['composer.dictate']).toBe('Start / stop dictation')
     expect(KEYBIND_ACTIONS.filter(candidate => candidate.id === 'composer.dictate')).toHaveLength(1)
   })
