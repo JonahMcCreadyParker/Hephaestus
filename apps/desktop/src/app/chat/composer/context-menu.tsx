@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
+import { PromptTemplatePicker } from '@/app/prompt-templates/picker'
 import { composerPanelCard } from '@/components/chat/composer-dock'
 import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,11 +22,10 @@ import { useComposerAttachmentProviders } from './contrib'
 import { GHOST_ICON_BTN } from './controls'
 import type { ChatBarState } from './types'
 
-const SNIPPET_KEYS = ['codeReview', 'implementationPlan', 'explainThis']
-
 export function ContextMenu({
   state,
   onInsertText,
+  onInsertTemplate,
   onOpenUrlDialog,
   onPasteClipboardImage,
   onPickFiles,
@@ -116,50 +115,12 @@ export function ContextMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <PromptSnippetsDialog onInsertText={onInsertText} onOpenChange={setSnippetsOpen} open={snippetsOpen} />
+      <PromptTemplatePicker
+        onInsertText={onInsertTemplate ?? onInsertText}
+        onOpenChange={setSnippetsOpen}
+        open={snippetsOpen}
+      />
     </>
-  )
-}
-
-function PromptSnippetsDialog({ onInsertText, onOpenChange, open }: PromptSnippetsDialogProps) {
-  const { t } = useI18n()
-  const c = t.composer
-
-  return (
-    <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{c.snippetsTitle}</DialogTitle>
-          <DialogDescription>{c.snippetsDesc}</DialogDescription>
-        </DialogHeader>
-        <ul className="grid gap-1">
-          {SNIPPET_KEYS.map(key => {
-            const snippet = c.snippets[key]
-
-            return (
-              <li key={key}>
-                <button
-                  className="group/snippet flex w-full cursor-pointer items-start gap-2.5 rounded-md border border-transparent px-2.5 py-2 text-left transition-colors hover:border-(--ui-stroke-tertiary) hover:bg-(--ui-control-hover-background) focus-visible:border-(--ui-stroke-tertiary) focus-visible:bg-(--ui-control-hover-background) focus-visible:outline-hidden"
-                  onClick={() => {
-                    onInsertText(snippet.text)
-                    onOpenChange(false)
-                  }}
-                  type="button"
-                >
-                  <MessageSquareText className="mt-0.5 size-3.5 shrink-0 text-(--ui-text-tertiary) group-hover/snippet:text-foreground" />
-                  <span className="grid min-w-0 gap-0.5">
-                    <span className="text-sm font-medium text-foreground">{snippet.label}</span>
-                    <span className="text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-                      {snippet.description}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      </DialogContent>
-    </Dialog>
   )
 }
 
@@ -185,6 +146,7 @@ interface ContextMenuItemProps {
 }
 
 interface ContextMenuProps {
+  onInsertTemplate?: (text: string) => void
   onInsertText: (text: string) => void
   onOpenUrlDialog: () => void
   onPasteClipboardImage?: (opts?: { silent?: boolean }) => Promise<boolean> | void
@@ -192,10 +154,4 @@ interface ContextMenuProps {
   onPickFolders?: () => void
   onPickImages?: () => void
   state: ChatBarState
-}
-
-interface PromptSnippetsDialogProps {
-  onInsertText: (text: string) => void
-  onOpenChange: (open: boolean) => void
-  open: boolean
 }

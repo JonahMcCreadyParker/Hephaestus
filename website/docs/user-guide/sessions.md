@@ -36,6 +36,29 @@ separate feature.
 
 ## How Sessions Work
 
+### Saved prompt templates (Desktop)
+
+Open **Prompt templates** in the left sidebar to create, edit, duplicate,
+favorite, or delete reusable prompts. Choose an existing category or type a
+new category name when saving. Starter examples cover development, reviews,
+email, research, writing, planning, and general tasks. Search matches titles,
+prompt text, and category names; results remain grouped by category.
+
+In any new or existing chat, use **+ → Prompt snippets** to open the same
+library. Select **Use template**, fill the fields, check the preview, then
+choose **Insert into chat**. Text is inserted at the remembered cursor position
+and can be edited or undone before sending. Templates never send automatically
+or grant access to email or other integrations.
+
+Use `{{project_name}}` for required details and `{{tone|friendly}}` for a
+prefilled default. Repeated placeholders share one form field. Filled-in values
+are used for that insertion only, without modifying the saved template.
+
+The library is saved locally for this desktop/browser installation and shared
+across its profiles and projects. **Export JSON** provides a portable backup;
+**Import JSON** adds templates and categories without replacing existing ones.
+It is not automatically synchronized with other devices or a remote backend.
+
 Every conversation — whether from the CLI, Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Teams, or any other messaging platform — is stored as a session with full message history. Sessions are tracked in:
 
 1. **SQLite database** (`~/.hermes/state.db`) — structured session metadata with FTS5 full-text search, plus full message history
