@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 import pytest
 
@@ -53,6 +54,36 @@ def test_create_get_list(conn):
     # Lookup by slug too.
     assert pdb.get_project(conn, "hermes-agent").id == pid
     assert len(pdb.list_projects(conn)) == 1
+
+
+def test_managed_workspace_failure_does_not_save_project(conn):
+    root = pdb.get_hermes_home() / "project-workspaces"
+    root.write_text("blocked by a file", encoding="utf-8")
+
+    with pytest.raises(OSError):
+        pdb.create_project(conn, name="Research", managed_workspace=True)
+
+    assert pdb.list_projects(conn) == []
+
+
+def test_managed_workspace_keeps_files_when_project_is_deleted(conn):
+    pid = pdb.create_project(conn, name="Research", managed_workspace=True)
+    project = pdb.get_project(conn, pid)
+    folder = Path(project.primary_path)
+    notes = folder / "notes.md"
+    notes.write_text("Research notes", encoding="utf-8")
+
+    pdb.update_project(conn, pid, name="Renamed")
+    assert pdb.get_project(conn, pid).primary_path == str(folder)
+    pdb.delete_project(conn, pid)
+
+    assert notes.read_text(encoding="utf-8") == "Research notes"
+
+
+def test_managed_workspace_rejects_existing_folders(conn, tmp_path):
+    with pytest.raises(ValueError, match="cannot be combined"):
+        pdb.create_project(conn, name="Research", managed_workspace=True, folders=[str(tmp_path)])
+    assert pdb.list_projects(conn) == []
 
 
 

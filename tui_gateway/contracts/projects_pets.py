@@ -76,6 +76,7 @@ class ProjectsCreateParams(ProfileParams):
     """``use`` also activates the new project."""
 
     name: str
+    managed_workspace: bool = False
     folders: list[str] | None = None
     slug: str | None = None
     primary_path: str | None = None

@@ -71,6 +71,7 @@ vi.mock('@/store/projects', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  $projectDialog.set({ mode: 'create' })
   createProject.mockResolvedValue({ id: 'p_created' })
   addProjectFolders.mockResolvedValue(undefined)
   pickProjectFolders.mockResolvedValue(['/Users/test/my-folder'])
@@ -84,10 +85,7 @@ vi.mock('@/lib/project-idea-templates', () => ({
   randomIdeaTemplates: () => [{ emoji: '🚀', idea: 'A rocket tracker', label: 'Rocket tracker' }]
 }))
 
-// Fill the create form and click Create once the form is actually submittable
-// (creation requires a name + at least one folder, so the button stays
-// disabled until both are in). Awaiting the enable also keeps an async submit
-// from one test leaking into the next.
+// Exercise the existing-folder creation path as well as name-only projects.
 async function fillCreateForm() {
   fireEvent.change(screen.getByPlaceholderText('Project name'), { target: { value: 'Skunkworks' } })
   fireEvent.click(screen.getByRole('button', { name: 'Add folder' }))
@@ -100,6 +98,22 @@ async function fillCreateForm() {
 }
 
 describe('ProjectDialog', () => {
+  it('creates a managed workspace from a name without requiring a folder picker', async () => {
+    render(<ProjectDialog />)
+
+    fireEvent.change(screen.getByPlaceholderText('Project name'), { target: { value: 'Research' } })
+    const create = screen.getByRole('button', { name: 'Create' })
+
+    expect((create as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(create)
+
+    await waitFor(() => {
+      expect(createProject).toHaveBeenCalledWith(expect.objectContaining({ folders: [], name: 'Research', use: true }))
+      expect(enterProject).toHaveBeenCalledWith('p_created')
+    })
+    expect(pickProjectFolders).not.toHaveBeenCalled()
+  })
+
   it('creates from the folder basename and enters the created project when the name is empty', async () => {
     render(<ProjectDialog />)
 

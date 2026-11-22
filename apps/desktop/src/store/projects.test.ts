@@ -601,28 +601,41 @@ describe('createProject', () => {
     }
   )
 
-  it('creates the project and flips into the grouped view so a blank slate shows it', async () => {
-    const created = { folders: [], id: 'p_new', name: 'Demo', primary_path: '/srv/demo' }
+  it.each([{ folders: [] }, { folders: ['/srv/demo'] }])(
+    'creates a project with folders $folders and opens the grouped view',
+    async ({ folders }) => {
+      const created = { folders: [], id: 'p_new', name: 'Demo', primary_path: '/srv/demo' }
 
-    const request = vi.fn(async (method: string) => {
-      if (method === 'projects.create') {
-        return { project: created }
+      const request = vi.fn(async (method: string) => {
+        if (method === 'projects.create') {
+          return { project: created }
+        }
+
+        // Reconcile (fire-and-forget) re-reads list + tree; echo the project back
+        // so the optimistic state survives instead of being wiped to empty.
+        return { active_id: 'p_new', projects: [created], scoped_session_ids: [] }
+      })
+
+      activeGateway.mockReturnValue({ connectionState: 'open', request } as never)
+
+      const result = await createProject({ folders, name: 'Demo', use: true })
+
+      expect(result).toEqual(created)
+      expect(request).toHaveBeenCalledWith('projects.create', expect.objectContaining({ name: 'Demo' }))
+
+      if (folders.length) {
+        expect(request).not.toHaveBeenCalledWith(
+          'projects.create',
+          expect.objectContaining({ managed_workspace: true })
+        )
+      } else {
+        expect(request).toHaveBeenCalledWith('projects.create', expect.objectContaining({ managed_workspace: true }))
       }
 
-      // Reconcile (fire-and-forget) re-reads list + tree; echo the project back
-      // so the optimistic state survives instead of being wiped to empty.
-      return { active_id: 'p_new', projects: [created], scoped_session_ids: [] }
-    })
-
-    activeGateway.mockReturnValue({ connectionState: 'open', request } as never)
-
-    const result = await createProject({ folders: ['/srv/demo'], name: 'Demo', use: true })
-
-    expect(result).toEqual(created)
-    expect(request).toHaveBeenCalledWith('projects.create', expect.objectContaining({ name: 'Demo' }))
-    expect($sidebarAgentsGrouped.get()).toBe(true)
-    expect($activeProjectId.get()).toBe('p_new')
-  })
+      expect($sidebarAgentsGrouped.get()).toBe(true)
+      expect($activeProjectId.get()).toBe('p_new')
+    }
+  )
 
   it('marks the backend stale and surfaces a friendly error when projects.create is missing', async () => {
     activeGateway.mockReturnValue({

@@ -160,9 +160,8 @@ export function ProjectDialog() {
       return
     }
 
-    // A project owns sessions by folder (cwd-prefix), so creation requires at
-    // least one — a folder-less project couldn't hold a session anyway.
-    if (mode === 'create' && trimmed && folders.length) {
+    // Name-only projects receive a private workspace from the backend.
+    if (mode === 'create' && trimmed) {
       // The arm is consumed exactly on SUCCESS (before the close): a failed
       // create leaves the dialog open for a retry that still lands where it
       // was dropped; the open-state effect discards it on cancel/teardown.
@@ -344,11 +343,7 @@ export function ProjectDialog() {
             <Button disabled={submitting} onClick={() => onOpenChange(false)} type="button" variant="ghost">
               {t.common.cancel}
             </Button>
-            <Button
-              disabled={submitting || !name.trim() || (mode === 'create' && folders.length === 0)}
-              onClick={() => void submit()}
-              type="button"
-            >
+            <Button disabled={submitting || !name.trim()} onClick={() => void submit()} type="button">
               {mode === 'rename' ? t.common.save : p.create}
             </Button>
           </DialogFooter>

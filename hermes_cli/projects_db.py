@@ -221,9 +221,11 @@ def create_project(
     conn: sqlite3.Connection, *, name: str, slug: Optional[str] = None, folders: Optional[Iterable[str]] = None,
     primary_path: Optional[str] = None, description: Optional[str] = None, icon: Optional[str] = None,
     color: Optional[str] = None, board_slug: Optional[str] = None, allow_duplicate_path: bool = False,
+    managed_workspace: bool = False,
 ) -> str:
     """Create a project and return its id. ``folders`` are normalized to absolute paths; ``primary_path``
-    is added to the folder set (if absent) and marked primary, else the first folder becomes primary."""
+    is added to the folder set (if absent) and marked primary, else the first folder becomes primary.
+    ``managed_workspace`` provisions a private folder under the owning profile instead."""
     name = str(name or "").strip()
     if not name:
         raise ValueError("project name must not be empty")
@@ -232,6 +234,11 @@ def create_project(
     now = _now()
     folder_paths = list(dict.fromkeys(p for p in map(_normalize_path, folders or []) if p))
     primary = _normalize_path(primary_path) if primary_path else None
+    if managed_workspace:
+        if folder_paths or primary:
+            raise ValueError("managed workspace cannot be combined with existing folders")
+        primary = str(get_hermes_home() / "project-workspaces" / pid)
+        folder_paths = [primary]
     if primary and primary not in folder_paths:
         folder_paths.insert(0, primary)
     if primary is None and folder_paths:
@@ -253,6 +260,9 @@ def create_project(
             "INSERT INTO project_folders (project_id, path, label, is_primary, added_at) VALUES (?, ?, ?, ?, ?)",
             [(pid, path, None, 1 if path == primary else 0, now) for path in folder_paths],
         )
+        if managed_workspace:
+            # Provision before commit so a filesystem failure never publishes an unusable project.
+            Path(primary).mkdir(parents=True)
     return pid
 
 

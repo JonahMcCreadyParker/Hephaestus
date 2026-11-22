@@ -10,6 +10,30 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 
 Hermes Agent automatically saves every conversation as a session. Sessions enable conversation resume, cross-session search, and full conversation history management.
 
+## Organize chats into projects
+
+In the desktop sidebar, open **Projects → New project**, enter a name, and
+select **Create**. A project can be for research, writing, planning, or code;
+choosing a repository or an existing folder is optional. Without an existing
+folder, Hermes creates a dedicated workspace under the current profile's
+`project-workspaces/<project-id>/` directory. Remote connections create this
+folder on the connected backend, in the selected profile.
+
+Open a project to see its chats and start new chats inside it. To organize an
+existing conversation, use its **Move to project** menu or drag it onto the
+project in the sidebar. Stop any running turn before moving a chat. Moving
+changes the conversation's working directory, so subsequent file and terminal
+operations use the destination workspace. It does not move existing files.
+
+Project names, folders, and session working directories persist across restarts
+and are separate for each Hermes profile. Transcripts remain in the session
+database; project folders hold workspace files. Deleting a project removes its
+saved grouping while retaining its chats and files.
+
+This organization does not automatically share memory between chats or modify
+a running conversation's cached instructions. Shared project memory is a
+separate feature.
+
 ## How Sessions Work
 
 Every conversation — whether from the CLI, Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Teams, or any other messaging platform — is stored as a session with full message history. Sessions are tracked in:

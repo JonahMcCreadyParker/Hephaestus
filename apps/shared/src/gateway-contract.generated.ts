@@ -2592,6 +2592,7 @@ export interface ProjectResult {
 export interface ProjectsCreateParams {
   profile?: string | null
   name: string
+  managed_workspace?: boolean
   folders?: string[] | null
   slug?: string | null
   primary_path?: string | null

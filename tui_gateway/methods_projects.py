@@ -92,6 +92,7 @@ def _(rid, params, pdb, conn) -> dict:
 def _(rid, params, pdb, conn) -> dict:
     pid = pdb.create_project(
         conn, name=str(params.get("name") or ""), folders=params.get("folders") or [],
+        managed_workspace=bool(params.get("managed_workspace")),
         **_pick(params, "slug", "primary_path", "description", "icon", "color", "board_slug"))
     if params.get("use"):
         pdb.set_active(conn, pid)

@@ -33168,6 +33168,11 @@
             "title": "Name",
             "type": "string"
           },
+          "managed_workspace": {
+            "default": false,
+            "title": "Managed Workspace",
+            "type": "boolean"
+          },
           "folders": {
             "anyOf": [
               {

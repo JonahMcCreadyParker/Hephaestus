@@ -1110,6 +1110,14 @@ function projectInfoToTreeNode(project: ProjectInfo): SidebarProjectTree {
   }
 }
 
+function projectWorkspaceParams(input: CreateProjectInput) {
+  return {
+    folders: input.folders ?? [],
+    primary_path: input.primaryPath,
+    ...(!input.folders?.length && !input.primaryPath ? { managed_workspace: true } : {})
+  }
+}
+
 export async function createProject(input: CreateProjectInput): Promise<ProjectInfo | null> {
   if ($projectsRpcAvailable.get() === false) {
     throw projectsStaleBackendError()
@@ -1129,8 +1137,7 @@ export async function createProject(input: CreateProjectInput): Promise<ProjectI
       projectParams(
         {
           name: input.name,
-          folders: input.folders ?? [],
-          primary_path: input.primaryPath,
+          ...projectWorkspaceParams(input),
           slug: input.slug,
           description: input.description,
           icon: input.icon,

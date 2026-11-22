@@ -542,6 +542,33 @@ def _bind_profiles(monkeypatch, tmp_path: Path, homes: dict[str, Path]) -> None:
     )
 
 
+@pytest.mark.parametrize("profile", ["default", "coder"])
+def test_managed_project_workspace_persists_and_groups_sessions(monkeypatch, tmp_path, profile):
+    """Name-only projects own distinct real folders on both launch and secondary profiles."""
+    launch = _profile_dir(tmp_path, "launch")
+    coder = _profile_dir(tmp_path, "coder")
+    homes = {"default": launch, "coder": coder}
+    _bind_profiles(monkeypatch, tmp_path, homes)
+    with _serving_launch_profile(launch):
+        params = {"name": "Research / plans", "managed_workspace": True, "profile": profile}
+        first = _call("projects.create", params)["project"]
+        second = _call("projects.create", params)["project"]
+        folder = Path(first["primary_path"])
+        assert folder.parent == homes[profile] / "project-workspaces"
+        assert folder.is_dir()
+        assert first["primary_path"] != second["primary_path"]
+        assert _call("projects.get", {"id": first["id"], "profile": profile})["project"] == first
+        _create_session(homes[profile], "research-chat", folder)
+        project = _call("projects.project_sessions", {"project_id": first["id"], "profile": profile})["project"]
+        assert project["id"] == first["id"]
+        assert [row["id"] for repo in project["repos"] for lane in repo["groups"]
+                for row in lane["sessions"]] == ["research-chat"]
+        _call("projects.delete", {"id": first["id"], "profile": profile})
+        assert folder.is_dir()
+    other = coder if profile == "default" else launch
+    assert not (other / "project-workspaces").exists()
+
+
 def _create_project(home: Path, name: str, folder: Path, *, use: bool = False) -> dict:
     """Create a project in ``home``'s projects.db via the real RPC."""
     token = set_hermes_home_override(home)
