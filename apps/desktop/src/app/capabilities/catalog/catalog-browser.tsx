@@ -34,11 +34,13 @@ import {
   catalogTags,
   filterCatalog,
   relatedEntries, sortCatalog } from './catalog-query'
+import { InstalledCatalog } from './installed-catalog'
 import { $catalogCardView } from './store'
 import { useCatalogFilters } from './use-catalog-filters'
 
 interface CatalogBrowserProps {
   kind: CatalogKind
+  installedOnly?: boolean
   query?: string
   onQueryChange?: (value: string) => void
   /** Data-derived "Try …" placeholder nudges for the search field. */
@@ -309,8 +311,34 @@ function CatalogNoResults({ onClear }: { onClear: () => void }) {
   )
 }
 
+export const CatalogBrowser = memo(function CatalogBrowser(props: CatalogBrowserProps) {
+  if (props.installedOnly) {
+    return (
+      <InstalledCatalog
+        actions={(
+          <>
+            {props.headerActions}
+            {props.actions}
+          </>
+        )}
+        entries={(props.installedEntries ?? []).filter(props.isInstalled)}
+        kind={props.kind}
+        notice={props.notice}
+        onQueryChange={props.onQueryChange}
+        pending={props.installedPending}
+        query={props.query}
+        renderAction={props.renderInstalledAction}
+        renderDetail={props.renderInstalledDetail}
+        selectedEntryId={props.selectedEntryId}
+      />
+    )
+  }
+
+  return <DiscoveryCatalog {...props} />
+})
+
 // Props take no destructuring defaults: React Compiler 1.0 skips components that have them.
-export const CatalogBrowser = memo(function CatalogBrowser({
+function DiscoveryCatalog({
   kind,
   isInstalled,
   onInstall,
@@ -558,4 +586,4 @@ export const CatalogBrowser = memo(function CatalogBrowser({
       </div>
     </div>
   )
-})
+}

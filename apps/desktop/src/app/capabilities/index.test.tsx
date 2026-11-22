@@ -22,6 +22,9 @@ const getUsageAnalytics = vi.fn()
 const getProfiles = vi.fn()
 const getSkillContent = vi.fn()
 const getOfficialSkills = vi.fn()
+const getHermesConfigRecord = vi.fn()
+const getMcpCatalog = vi.fn()
+const setMcpServerEnabled = vi.fn()
 
 // Partial mock: keep the real module (CapabilitiesView pulls in @/store/profile,
 // whose import-time subscription calls setApiRequestProfile) and stub only the
@@ -39,7 +42,11 @@ vi.mock('@/hermes', async importOriginal => ({
   getUsageAnalytics: (days: number, profile?: null | string) => getUsageAnalytics(days, profile),
   getProfiles: () => getProfiles(),
   getSkillContent: (name: string, profile?: null | string) => getSkillContent(name, profile),
-  getOfficialSkills: (profile?: null | string) => getOfficialSkills(profile)
+  getOfficialSkills: (profile?: null | string) => getOfficialSkills(profile),
+  getHermesConfigRecord: (profile?: HermesApi.ProfileScope) => getHermesConfigRecord(profile),
+  getMcpCatalog: (profile?: HermesApi.ProfileScope) => getMcpCatalog(profile),
+  setMcpServerEnabled: (name: string, enabled: boolean, profile?: HermesApi.ProfileScope) =>
+    setMcpServerEnabled(name, enabled, profile)
 }))
 
 // Notifications hit nanostores/timers we don't care about here.
@@ -107,6 +114,9 @@ beforeEach(() => {
   getToolsetConfig.mockResolvedValue({ has_category: true, active_provider: null, providers: [] })
   getUsageAnalytics.mockResolvedValue({ tools: [] })
   getOfficialSkills.mockResolvedValue({ skills: [] })
+  getHermesConfigRecord.mockResolvedValue({})
+  getMcpCatalog.mockResolvedValue({ entries: [], diagnostics: [] })
+  setMcpServerEnabled.mockResolvedValue({ ok: true })
   getSkillContent.mockResolvedValue({
     name: 'web-research',
     path: '/skills/web-research/SKILL.md',
@@ -278,6 +288,79 @@ describe('CapabilitiesView toolset management', { timeout: 60_000 }, () => {
     expect(getSkillContent.mock.calls[0][0]).toBe('web-research')
     expect(await screen.findByText(/Deep research steps/)).toBeTruthy()
     expect(screen.queryByText(/version: 1\.2\.0/)).toBeNull()
+  })
+
+  it('shows only installed skills as searchable tiles and toggles them in the pinned profile', async () => {
+    const installed = [
+      { name: 'web-research', description: 'Research the web', category: 'research', enabled: true },
+      { name: 'writing-guide', description: 'Edit prose', category: 'writing', enabled: false }
+    ]
+
+    getSkills.mockResolvedValue(installed)
+    queryClient.setQueryData(
+      ['public-catalog', 'skills'],
+      parseCatalog('skills', [{ name: 'gif-search', source: 'official', identifier: 'official/gifs/gif-search' }])
+    )
+    setSkillEnabled.mockImplementationOnce(async () => {
+      getSkills.mockResolvedValue(installed.map(skill => ({ ...skill, enabled: false })))
+
+      return { ok: true, name: 'web-research', enabled: false }
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/installed']}>
+          <CapabilitiesView fixedProfile="researcher" installedOnly />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    const toggle = await screen.findByRole('switch', { name: 'web-research' })
+    expect(toggle.closest('article')).toBeTruthy()
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
+    expect(screen.getByRole('switch', { name: 'writing-guide' }).getAttribute('aria-checked')).toBe('false')
+    expect(screen.queryByRole('button', { name: 'gif-search' })).toBeNull()
+    expect(getOfficialSkills).not.toHaveBeenCalled()
+    expect(getToolsets).not.toHaveBeenCalled()
+
+    fireEvent.click(toggle)
+    await waitFor(() => expect(setSkillEnabled).toHaveBeenCalledWith('web-research', false, 'researcher'))
+    await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('false'))
+    fireEvent.change(screen.getByPlaceholderText('Search skills'), { target: { value: 'edit prose' } })
+    await waitFor(() => expect(screen.queryByRole('switch', { name: 'web-research' })).toBeNull())
+    expect(screen.getByRole('switch', { name: 'writing-guide' })).toBeTruthy()
+  })
+
+  it('shows configured MCP servers including disabled ones and updates only the selected server', async () => {
+    getHermesConfigRecord.mockResolvedValue({
+      mcp_servers: {
+        'local-notes': { command: 'notes-mcp' },
+        'disabled-notes': { command: 'other-mcp', disabled: true }
+      }
+    })
+    getMcpCatalog.mockResolvedValue({
+      entries: [{ name: 'available-not-installed', installed: false, required_env: [] }],
+      diagnostics: []
+    })
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/installed?tab=connectors']}>
+          <CapabilitiesView fixedProfile="researcher" installedOnly />
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    const toggle = await screen.findByRole('switch', { name: 'Turn Local Notes off' })
+    const disabled = screen.getByRole('switch', { name: 'Turn Disabled Notes on' })
+    expect(disabled.getAttribute('aria-checked')).toBe('false')
+    expect(screen.queryByText('available-not-installed')).toBeNull()
+    fireEvent.click(toggle)
+    await waitFor(() =>
+      expect(setMcpServerEnabled).toHaveBeenCalledExactlyOnceWith('local-notes', false, 'researcher')
+    )
+    await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('false'))
+    expect(disabled.getAttribute('aria-checked')).toBe('false')
   })
 
   it('keeps installed skills on their toggle and installs new cards into the pinned remote profile', async () => {

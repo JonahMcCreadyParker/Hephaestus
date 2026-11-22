@@ -21,6 +21,7 @@ interface SkillCatalogProps {
   query?: string
   onQueryChange?: (value: string) => void
   actions?: ReactNode
+  installedOnly?: boolean
   installedPending?: boolean
   notice?: ReactNode
   renderInstalledDetail: (skill: SkillInfo) => ReactNode
@@ -39,6 +40,7 @@ function ScopedSkillCatalog({
   query,
   onQueryChange,
   actions,
+  installedOnly,
   installedPending,
   notice,
   renderInstalledDetail,
@@ -73,6 +75,7 @@ function ScopedSkillCatalog({
   } = useQuery({
     queryKey: [...OFFICIAL_SKILLS_KEY, profileScopeKey(profile)],
     queryFn: () => getOfficialSkills(profile),
+    enabled: !installedOnly,
     staleTime: 60_000,
     retry: false
   })
@@ -95,7 +98,7 @@ function ScopedSkillCatalog({
         path: '/api/skills/hub/sources',
         timeoutMs: 45_000
       }),
-    enabled: hasHubSkills,
+    enabled: hasHubSkills && !installedOnly,
     staleTime: 60_000,
     retry: false
   })
@@ -105,7 +108,7 @@ function ScopedSkillCatalog({
   const { data: updatesData } = useQuery({
     queryKey: [...HUB_SOURCES_KEY, 'updates', profileScopeKey(profile)],
     queryFn: () => getSkillHubUpdates(profile),
-    enabled: hasHubSkills,
+    enabled: hasHubSkills && !installedOnly,
     staleTime: 15 * 60_000,
     retry: false
   })
@@ -295,13 +298,14 @@ function ScopedSkillCatalog({
     <CatalogBrowser
       actions={actions}
       installedEntries={catalog.entries}
-      installedPending={installedPending || identityPending}
+      installedOnly={installedOnly}
+      installedPending={installedPending || (!installedOnly && identityPending)}
       isInstalled={isInstalled}
       isInstalling={entry => installing.has(installIdentifier(entry) ?? '')}
       isSuperseded={isSuperseded}
       kind="skills"
       matchInstalled={catalog.matchInstalled}
-      notice={
+      notice={installedOnly ? notice : (
         <>
           {notice}
           {(officialError || hubError) && (
@@ -329,7 +333,7 @@ function ScopedSkillCatalog({
             />
           )}
         </>
-      }
+      )}
       onInstall={install}
       onQueryChange={onQueryChange}
       query={query}

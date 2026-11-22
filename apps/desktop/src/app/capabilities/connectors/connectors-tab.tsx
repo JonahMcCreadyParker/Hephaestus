@@ -9,6 +9,7 @@ import { $freeTierStatus } from '@/store/free-tier'
 import { $freeTierSignIn, $openAppWindows } from '@/store/free-tier-sign-in'
 import { notifyError } from '@/store/notifications'
 
+import { CatalogAlert } from '../catalog/catalog-alert'
 import { installBundledEntry } from '../mcp/install-catalog-entry'
 import { useMcpServers } from '../mcp/use-mcp-servers'
 
@@ -43,10 +44,11 @@ const toolsListKey = (card: ConnectorCardModel) => (card.residency === 'local' ?
 
 export interface ConnectorsTabProps {
   gateway: HermesGateway | null
+  installedOnly?: boolean
   profile: ProfileScope
 }
 
-export function ConnectorsTab({ gateway, profile }: ConnectorsTabProps) {
+export function ConnectorsTab({ gateway, installedOnly = false, profile }: ConnectorsTabProps) {
   const { t } = useI18n()
   const copy = t.connectorsPage
 
@@ -102,13 +104,19 @@ export function ConnectorsTab({ gateway, profile }: ConnectorsTabProps) {
 
   const cards = useMemo(
     () =>
-      deriveCards({
-        bundled,
-        hosted: forgetAbandoned(hosted.rows, new Set(abandoned)),
-        local: servers,
-        titles: hosted.titles
-      }),
-    [abandoned, bundled, hosted.rows, hosted.titles, servers]
+      installedOnly
+        ? deriveCards({
+            // Keep each configured server visible, even when several map to the same catalog app.
+            hosted: [],
+            local: servers.map(server => ({ ...server, connectorSlug: undefined }))
+          })
+        : deriveCards({
+            bundled,
+            hosted: forgetAbandoned(hosted.rows, new Set(abandoned)),
+            local: servers,
+            titles: hosted.titles
+          }),
+    [abandoned, bundled, hosted.rows, hosted.titles, installedOnly, servers]
   )
 
   useEffect(startConnectorPersistence, [])
@@ -190,9 +198,27 @@ export function ConnectorsTab({ gateway, profile }: ConnectorsTabProps) {
         busyKey={busyKey}
         cards={cards}
         filter={filter}
-        hostedFailed={hosted.phase === 'failed'}
-        loading={(hosted.phase === 'loading' || mcp.configLoading || mcp.catalogLoading) && cards.length === 0}
-        notices={<HostedNotice hasGuest={freeTier?.has_guest === true} phase={hosted.phase} />}
+        hostedFailed={!installedOnly && hosted.phase === 'failed'}
+        installedOnly={installedOnly}
+        loading={
+          (installedOnly ? mcp.configLoading : hosted.phase === 'loading' || mcp.configLoading || mcp.catalogLoading) &&
+          cards.length === 0
+        }
+        notices={
+          installedOnly ? (
+            mcp.configFailed && (
+              <CatalogAlert
+                onRetry={mcp.refetchConfig}
+                retryLabel={t.catalog.retry}
+                title={t.settings.config.failedLoad}
+              >
+                {mcp.configError instanceof Error ? mcp.configError.message : undefined}
+              </CatalogAlert>
+            )
+          ) : (
+            <HostedNotice hasGuest={freeTier?.has_guest === true} phase={hosted.phase} />
+          )
+        }
         onFilterChange={setFilter}
         onOpen={card => setOpenKey(cardKey(card))}
         onPrefetch={card => prefetchConnectorTools(profile, card)}
@@ -204,6 +230,7 @@ export function ConnectorsTab({ gateway, profile }: ConnectorsTabProps) {
         }}
         onVerb={runVerb}
         selectedKey={openKey}
+        serverToggleDisabled={mcp.configLoading || mcp.configFailed || mcp.profilePending || mcp.saving}
       />
 
       {openCard && openCard.ways.hosted === null ? (

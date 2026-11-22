@@ -18,8 +18,9 @@ export const TOOLSETS_QUERY_KEY = ['toolsets-list'] as const
  *  still match). */
 export const toolsetsQueryKey = (profile: ProfileScope) => [...TOOLSETS_QUERY_KEY, profileScopeKey(profile)]
 
-export function useToolsetsQuery(profile: ProfileScope) {
+export function useToolsetsQuery(profile: ProfileScope, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: toolsetsQueryKey(profile),
     queryFn: () => getToolsets(profile),
     staleTime: 0

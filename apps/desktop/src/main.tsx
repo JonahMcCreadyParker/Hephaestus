@@ -30,6 +30,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router'
 
 import App from './app'
+import { registerInstalledCapabilities } from './app/capabilities/installed'
 import { registerPromptTemplates } from './app/prompt-templates'
 import { RootErrorBoundary } from './components/error-boundary'
 import { HapticsProvider } from './components/haptics-provider'
@@ -45,6 +46,7 @@ import { installBrowserTabTitle } from './store/browser-tab-title'
 import { ThemeProvider } from './themes/context'
 
 registerPromptTemplates()
+registerInstalledCapabilities()
 installClipboardShim()
 // Chromium serializes selection copies (Cmd+C, right-click Copy) with the
 // theme's computed colors inlined; without this guard a dark-theme selection

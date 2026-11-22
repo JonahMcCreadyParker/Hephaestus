@@ -121,6 +121,35 @@ afterEach(() => {
 })
 
 describe('PluginsTab', () => {
+  it('shows installed agent plugins on tiles and routes the switch to their profile', async () => {
+    $agentPlugins.set([
+      { key: 'notes', name: 'notes', description: 'Notes integration', source: 'git', status: 'disabled', version: '1' }
+    ])
+    seedCatalog()
+
+    render(
+      <MemoryRouter initialEntries={['/installed?tab=plugins']}>
+        <QueryClientProvider client={queryClient}>
+          <PluginsHarness installedOnly profile="workbot" />
+        </QueryClientProvider>
+      </MemoryRouter>
+    )
+
+    const toggle = await screen.findByRole('switch', { name: 'notes' })
+    expect(toggle.closest('article')).toBeTruthy()
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+    expect(screen.queryByRole('button', { name: weatherEntry.name })).toBeNull()
+    fireEvent.click(toggle)
+    await waitFor(() =>
+      expect(requestGateway).toHaveBeenCalledWith('plugins.manage', {
+        action: 'toggle',
+        enable: true,
+        key: 'notes',
+        profile: 'workbot'
+      })
+    )
+  })
+
   it('opens a non-first installed deep-link target from Browse and keeps that selection after consuming the link', async () => {
     Element.prototype.scrollIntoView = vi.fn()
     $agentPlugins.set(

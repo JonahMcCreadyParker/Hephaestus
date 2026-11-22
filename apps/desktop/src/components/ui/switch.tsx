@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { Switch as SwitchPrimitive } from 'radix-ui'
 import * as React from 'react'
 
+import { Check, X } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
 const switchVariants = cva(
@@ -36,12 +37,25 @@ const switchThumbVariants = cva(
 
 function Switch({
   className,
+  showStateIcon,
   size,
   ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root> & VariantProps<typeof switchVariants>) {
+}: React.ComponentProps<typeof SwitchPrimitive.Root> & VariantProps<typeof switchVariants> & {
+  showStateIcon?: boolean
+}) {
   return (
     <SwitchPrimitive.Root className={cn(switchVariants({ size }), className)} data-slot="switch" {...props}>
-      <SwitchPrimitive.Thumb className={switchThumbVariants({ size })} data-slot="switch-thumb" />
+      <SwitchPrimitive.Thumb
+        className={cn(switchThumbVariants({ size }), showStateIcon && 'group/switch-thumb grid place-items-center')}
+        data-slot="switch-thumb"
+      >
+        {showStateIcon && (
+          <>
+            <Check aria-hidden className="hidden size-2.5 text-foreground group-data-[state=checked]/switch-thumb:block" />
+            <X aria-hidden className="size-2.5 text-background group-data-[state=checked]/switch-thumb:hidden" />
+          </>
+        )}
+      </SwitchPrimitive.Thumb>
     </SwitchPrimitive.Root>
   )
 }

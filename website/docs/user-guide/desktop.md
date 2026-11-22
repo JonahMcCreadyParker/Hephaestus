@@ -752,6 +752,12 @@ For the same setup from the web-dashboard angle, see [Web Dashboard → Connecti
 
 ## Extending the desktop app
 
+In the Hephaestus desktop sidebar, open **Installed** to manage **Skills**, **MCP**, and **Plugins**.
+Use the switch on a tile to enable or disable it, or select its name for details. Skills, MCP
+servers, and agent plugins follow the active profile. Desktop plugins apply to the entire app.
+For an MCP server supplied by a plugin, use that plugin's controls. Choose **Discover** to open
+the full Capabilities catalog.
+
 The desktop app is contribution-driven — panes, pages, sidebar nav, status-bar
 items, palette commands, keybinds, and themes all register through one SDK, and
 you can add your own. A plugin is a single ESM file dropped in

@@ -10,7 +10,8 @@ import {
   type McpTestResult,
   type ProfileScope,
   profileScopeKey,
-  saveMcpServers
+  saveMcpServers,
+  setMcpServerEnabled
 } from '@/hermes'
 import { useI18n } from '@/i18n'
 import { completeMcpDesktopOAuth } from '@/lib/mcp-dashboard-oauth'
@@ -92,6 +93,7 @@ export function useMcpServers({ gateway, profile }: UseMcpServersOptions): McpSe
   })
 
   const [saving, setSaving] = useState(false)
+  const togglingServer = useRef(false)
 
   const [authing, setAuthing] = useState<null | string>(null)
 
@@ -314,8 +316,43 @@ export function useMcpServers({ gateway, profile }: UseMcpServersOptions): McpSe
   }
 
   const setServerEnabled = async (serverName: string, enabled: boolean) => {
-    if ((await writeEntry(serverName, entry => withEnabled(entry, enabled))) && enabled) {
-      void fleet.runProbe(serverName)
+    if (saving || togglingServer.current || profilePending || !servers[serverName]) {
+      return
+    }
+
+    const epoch = profileEpoch.current
+
+    const patch = (doc: McpServers) =>
+      doc[serverName] ? { ...doc, [serverName]: withEnabled(doc[serverName], enabled) } : doc
+
+    togglingServer.current = true
+    setSaving(true)
+
+    try {
+      const result = await setMcpServerEnabled(serverName, enabled, profile)
+
+      if (profileEpoch.current !== epoch) {
+        return
+      }
+
+      if (!result.ok) {
+        notifyError(new Error(m.saveFailed), serverName)
+
+        return
+      }
+
+      setConfig(current => ({ ...current, mcp_servers: patch(getServers(current ?? null)) }))
+      mirror(patch(servers), patch)
+      void silentReload()
+
+      if (enabled) {
+        void fleet.runProbe(serverName)
+      }
+    } catch (err) {
+      notifyError(err, m.saveFailed)
+    } finally {
+      togglingServer.current = false
+      setSaving(false)
     }
   }
 

@@ -25,6 +25,7 @@ import {
   $agentPluginBusy,
   $agentPlugins,
   $agentPluginsError,
+  $agentPluginsProfile,
   $agentPluginsStatus,
   type AgentPluginRow,
   type AgentPluginServerState,
@@ -580,12 +581,14 @@ export function PluginActions({ profile }: { profile: ProfileScope }) {
 /** Installed packages retain both halves' controls in the native detail pane.
  *  Browse shares the Skills catalog; navigation and search belong to the shell. */
 export const PluginsTab = memo(function PluginsTab({
+  installedOnly = false,
   profile,
   scopeSelector,
   scopeLabel,
   query,
   onQueryChange
 }: {
+  installedOnly?: boolean
   profile: ProfileScope
   query?: string
   onQueryChange?: (value: string) => void
@@ -600,12 +603,14 @@ export const PluginsTab = memo(function PluginsTab({
 
   const desktopRecords = useStore($pluginRecords)
   const agentRows = useStore($agentPlugins)
+  const loadedFor = useStore($agentPluginsProfile)
   const status = useStore($agentPluginsStatus)
   const error = useStore($agentPluginsError)
   const gatewayState = useStore($gatewayState)
   const busyKey = useStore($agentPluginBusy)
 
   const scope = profileParam(profile)
+  const hasScopedAgentRows = !installedOnly || (gatewayState === 'open' && loadedFor === scope)
   const label = scopeLabel ?? scope ?? t.skills.plugins.defaultProfile
 
   useEffect(() => {
@@ -615,8 +620,9 @@ export const PluginsTab = memo(function PluginsTab({
   }, [requestGateway, scope, gatewayState])
 
   const packages = useMemo(
-    () => mergePluginPackages(Object.values(desktopRecords), agentRows.filter(isDesktopRelevantPlugin)),
-    [agentRows, desktopRecords]
+    () =>
+      mergePluginPackages(Object.values(desktopRecords), hasScopedAgentRows ? agentRows.filter(isDesktopRelevantPlugin) : []),
+    [agentRows, desktopRecords, hasScopedAgentRows]
   )
 
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
@@ -778,6 +784,7 @@ export const PluginsTab = memo(function PluginsTab({
         checked={on}
         disabled={agent ? !agent.key || agentBusy(agent) : false}
         onCheckedChange={setEnabled}
+        showStateIcon={installedOnly}
         size="xs"
       />
     )
@@ -798,7 +805,8 @@ export const PluginsTab = memo(function PluginsTab({
     <CatalogBrowser
       headerActions={<PluginActions profile={profile} />}
       installedEntries={installedEntries}
-      installedPending={status !== 'ready'}
+      installedOnly={installedOnly}
+      installedPending={status !== 'ready' || !hasScopedAgentRows}
       isInstalled={isInstalled}
       kind="plugins"
       matchInstalled={matchInstalled}

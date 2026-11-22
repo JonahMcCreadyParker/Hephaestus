@@ -29,6 +29,7 @@ interface SkillsTabProps {
   query: string
   onQueryChange?: (value: string) => void
   installedPending?: boolean
+  installedOnly?: boolean
   installedError?: unknown
   onRefresh: () => void
 }
@@ -45,6 +46,7 @@ function ScopedSkillsTab({
   query,
   onQueryChange,
   skills,
+  installedOnly,
   installedPending = false,
   installedError
 }: SkillsTabProps) {
@@ -253,6 +255,7 @@ function ScopedSkillsTab({
             />
           </>
         }
+        installedOnly={installedOnly}
         installedPending={installedPending || Boolean(installedError)}
         notice={notice}
         onQueryChange={onQueryChange}
@@ -276,6 +279,7 @@ function ScopedSkillsTab({
               checked={skill.enabled}
               disabled={controlsDisabled}
               onCheckedChange={enabled => void applyEnabled([skill], enabled)}
+              showStateIcon={installedOnly}
               size="xs"
             />
           </span>

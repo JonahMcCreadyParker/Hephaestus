@@ -2,6 +2,7 @@ import './ui/page.css'
 
 import type * as React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router'
 
 import { PageLoader } from '@/components/page-loader'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ import { ToolsetsTab } from './toolsets/toolsets-tab'
 // Skills Hub browsing lives inside the Skills tab. Legacy `?tab=hub`
 // links fall back to 'skills' via useRouteEnumParam.
 const CAPABILITY_MODES = ['skills', 'plugins', 'connectors', 'toolsets'] as const
+const INSTALLED_MODES = ['skills', 'connectors', 'plugins'] as const
 
 type CapabilityMode = (typeof CAPABILITY_MODES)[number]
 
@@ -41,6 +43,7 @@ interface CapabilitiesViewProps extends React.ComponentProps<'section'> {
    *  state lives in local React state instead of the route's `?tab=` param,
    *  so an embedding dialog never fights the page router. */
   embedded?: boolean
+  installedOnly?: boolean
   /** Pin the WHOLE view to one profile: the scope selector is hidden and
    *  every tab reads/writes THAT profile. This is the plugin door — Bot Mode
    *  renders the real Capabilities surface pinned to a bot. */
@@ -62,13 +65,14 @@ export function CapabilitiesView({
   embedded = false,
   fixedConnection,
   fixedProfile,
+  installedOnly = false,
   setStatusbarItemGroup: _setStatusbarItemGroup,
   ...props
 }: CapabilitiesViewProps) {
   const { t } = useI18n()
   // Both hooks run unconditionally (rules of hooks); embedded picks the local
   // one so tab clicks inside a dialog don't rewrite the page URL.
-  const routeTab = useRouteEnumParam('tab', CAPABILITY_MODES, 'skills')
+  const routeTab = useRouteEnumParam<CapabilityMode>('tab', installedOnly ? INSTALLED_MODES : CAPABILITY_MODES, 'skills')
   const localTab = useState<CapabilityMode>('skills')
   const [mode, setMode] = embedded ? localTab : routeTab
   const gateway = useStoreSelector($gateway, g => (mode === 'connectors' ? g : null))
@@ -80,26 +84,35 @@ export function CapabilitiesView({
   // The two installed lists the tab pills count. They are fetched here, as a
   // pair, because the counts stay live for the tab the user is NOT on.
   const { data: skills, isError: skillsFailed, error: skillsError } = useSkillsQuery(scope.profile)
-  const { data: toolsets, isError: toolsetsFailed } = useToolsetsQuery(scope.profile)
+  const { data: toolsets, isError: toolsetsFailed } = useToolsetsQuery(scope.profile, !installedOnly)
 
   const refreshCapabilities = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: SKILLS_QUERY_KEY }),
-      queryClient.invalidateQueries({ queryKey: TOOLSETS_QUERY_KEY }),
-      queryClient.invalidateQueries({ queryKey: OFFICIAL_SKILLS_KEY })
+      ...(!installedOnly
+        ? [
+            queryClient.invalidateQueries({ queryKey: TOOLSETS_QUERY_KEY }),
+            queryClient.invalidateQueries({ queryKey: OFFICIAL_SKILLS_KEY })
+          ]
+        : [])
     ])
 
     invalidateSlashCompletions()
 
-    void refreshToolCalls(scope.profile)
-  }, [scope.profile])
+    if (!installedOnly) {
+      void refreshToolCalls(scope.profile)
+    }
+  }, [installedOnly, scope.profile])
 
   useRefreshHotkey(refreshCapabilities)
 
   // Plugins is small enough to warm from any tab. Skills (~100k rows) only
   // loads when asked for: an idle parse of it would still block the page.
-  useEffect(() => (mode === 'plugins' ? undefined : prefetchCatalogWhenIdle('plugins')), [mode])
-  useEffect(syncCatalogArcs, [])
+  useEffect(
+    () => (installedOnly || mode === 'plugins' ? undefined : prefetchCatalogWhenIdle('plugins')),
+    [installedOnly, mode]
+  )
+  useEffect(() => (installedOnly ? undefined : syncCatalogArcs()), [installedOnly])
 
   // Rotating placeholder nudges from the user's own data — teach that search
   // understands tool names, not just titles.
@@ -134,6 +147,7 @@ export function CapabilitiesView({
     connectors: () => (
       <ConnectorsTab
         gateway={scope.crossBackend ? null : gateway}
+        installedOnly={installedOnly}
         key={`connectors-${scope.key}`}
         profile={scope.profile}
       />
@@ -141,6 +155,7 @@ export function CapabilitiesView({
     // Agent plugins for the scoped profile and app-level desktop plugins.
     plugins: () => (
       <PluginsTab
+        installedOnly={installedOnly}
         key={`plugins-${scope.key}`}
         onQueryChange={setQuery}
         profile={scope.profile}
@@ -152,6 +167,7 @@ export function CapabilitiesView({
     skills: () => (
       <SkillsTab
         installedError={skillsError}
+        installedOnly={installedOnly}
         installedPending={!skills || skillsFailed}
         key={`skills-${scope.key}`}
         onQueryChange={setQuery}
@@ -166,6 +182,13 @@ export function CapabilitiesView({
     )
   } satisfies Record<CapabilityMode, () => React.ReactNode>
 
+  const tabs = {
+    skills: { id: 'skills', label: t.skills.tabSkills, meta: skills?.length ?? null },
+    plugins: { id: 'plugins', label: t.skills.tabPlugins },
+    connectors: { id: 'connectors', label: installedOnly ? 'MCP' : t.connectorsPage.title },
+    toolsets: { id: 'toolsets', label: t.skills.tabToolsets, meta: toolsets ? visibleToolsetCount(toolsets) : null }
+  }
+
   return (
     <PageSearchShell
       {...props}
@@ -175,13 +198,16 @@ export function CapabilitiesView({
       searchHidden
       // The profile picker shares the tab row. Plugins scopes only its Agent
       // half, so its picker lives in that column instead.
-      searchTrailingAction={mode !== 'plugins' && <CapabilityScopeSelector scope={scope} />}
-      tabs={[
-        { id: 'skills', label: t.skills.tabSkills, meta: skills?.length ?? null },
-        { id: 'plugins', label: t.skills.tabPlugins },
-        { id: 'connectors', label: t.connectorsPage.title },
-        { id: 'toolsets', label: t.skills.tabToolsets, meta: toolsets ? visibleToolsetCount(toolsets) : null }
-      ]}
+      searchTrailingAction={
+        installedOnly ? (
+          <Button asChild size="xs" variant="outline">
+            <Link to={`/capabilities?tab=${mode}`}>{t.catalog.discover}</Link>
+          </Button>
+        ) : (
+          mode !== 'plugins' && <CapabilityScopeSelector scope={scope} />
+        )
+      }
+      tabs={(installedOnly ? INSTALLED_MODES : CAPABILITY_MODES).map(id => tabs[id])}
       tabsAlign="start"
     >
       <div className="flex h-full flex-col">{loadGate ?? tabContent[mode]()}</div>

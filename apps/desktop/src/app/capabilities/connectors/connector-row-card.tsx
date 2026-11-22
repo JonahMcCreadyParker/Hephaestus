@@ -51,21 +51,25 @@ function factText(copy: Translations['connectorsPage']['card'], fact: ConnectorF
 export interface ConnectorRowCardProps {
   busy?: boolean
   card: ConnectorCardModel
+  installedOnly?: boolean
   onOpen: () => void
   onPrefetch?: () => void
   onServerToggle?: (next: boolean) => void
   onVerb?: () => void
   selected?: boolean
+  serverToggleDisabled?: boolean
 }
 
 export function ConnectorRowCard({
   busy = false,
   card,
+  installedOnly = false,
   onOpen,
   onPrefetch,
   onServerToggle,
   onVerb,
-  selected = false
+  selected = false,
+  serverToggleDisabled = false
 }: ConnectorRowCardProps) {
   const { t } = useI18n()
   const copy = t.connectorsPage.card
@@ -81,6 +85,7 @@ export function ConnectorRowCard({
     <div
       className={cn(
         'relative flex items-center gap-3 rounded-lg border p-3 transition-colors duration-500 hover:transition-none',
+        installedOnly && 'items-start rounded-xl p-4',
         selected
           ? 'border-(--theme-primary) bg-(--ui-row-active-background)'
           : 'border-(--ui-stroke-quaternary) bg-(--ui-bg-elevated) hover:bg-(--chrome-action-hover)'
@@ -127,7 +132,9 @@ export function ConnectorRowCard({
         card={card}
         onServerToggle={local && card.plugin === undefined ? onServerToggle : undefined}
         onVerb={onVerb}
+        showStateIcon={installedOnly}
         stateLabel={stateLabel}
+        toggleDisabled={serverToggleDisabled}
         withDot={!unset}
       />
     </div>
@@ -139,14 +146,18 @@ function CardLane({
   card,
   onServerToggle,
   onVerb,
+  showStateIcon,
   stateLabel,
+  toggleDisabled,
   withDot
 }: {
   busy: boolean
   card: ConnectorCardModel
   onServerToggle?: (next: boolean) => void
   onVerb?: () => void
+  showStateIcon: boolean
   stateLabel: string
+  toggleDisabled: boolean
   withDot: boolean
 }) {
   const { t } = useI18n()
@@ -155,7 +166,7 @@ function CardLane({
   const fact = card.residency === 'hosted' && card.fact ? factText(copy, card.fact) : null
 
   return (
-    <div className="relative z-10 flex w-[7.75rem] shrink-0 flex-col items-end gap-1">
+    <div className={cn('relative z-10 flex shrink-0 flex-col items-end gap-1', !showStateIcon && 'w-[7.75rem]')}>
       <span className="flex items-center gap-1.5 text-[0.6875rem] text-(--ui-text-secondary)">
         {withDot ? (
           <span aria-hidden className={cn('size-[5px] shrink-0 rounded-full', STATE_DOT[card.state])} />
@@ -167,8 +178,11 @@ function CardLane({
         <Switch
           aria-label={server.serverEnabled ? copy.turnServerOff(card.name) : copy.turnServerOn(card.name)}
           checked={server.serverEnabled ?? false}
+          className={showStateIcon ? 'order-first' : undefined}
+          disabled={toggleDisabled}
           onCheckedChange={onServerToggle}
-          size="xs"
+          showStateIcon={showStateIcon}
+          size={showStateIcon ? 'default' : 'xs'}
         />
       ) : null}
 

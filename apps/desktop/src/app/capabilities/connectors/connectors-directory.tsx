@@ -20,6 +20,7 @@ export interface ConnectorsDirectoryProps {
   cards: ConnectorCardModel[]
   filter: ConnectorsFilter
   hostedFailed?: boolean
+  installedOnly?: boolean
   loading?: boolean
   notices?: ReactNode
   onFilterChange: (next: ConnectorsFilter) => void
@@ -29,6 +30,7 @@ export interface ConnectorsDirectoryProps {
   onServerToggle?: (card: ConnectorCardModel, next: boolean) => void
   onVerb?: (card: ConnectorCardModel) => void
   selectedKey?: null | string
+  serverToggleDisabled?: boolean
 }
 
 export function ConnectorsDirectory({
@@ -37,6 +39,7 @@ export function ConnectorsDirectory({
   cards,
   filter,
   hostedFailed = false,
+  installedOnly = false,
   loading = false,
   notices,
   onFilterChange,
@@ -45,7 +48,8 @@ export function ConnectorsDirectory({
   onRetryHosted,
   onServerToggle,
   onVerb,
-  selectedKey = null
+  selectedKey = null,
+  serverToggleDisabled = false
 }: ConnectorsDirectoryProps) {
   const { t } = useI18n()
   const copy = t.connectorsPage
@@ -125,12 +129,14 @@ export function ConnectorsDirectory({
             <Group
               busyKey={busyKey}
               group={group}
+              installedOnly={installedOnly}
               key={group.id}
               onOpen={onOpen}
               onPrefetch={onPrefetch}
               onServerToggle={onServerToggle}
               onVerb={onVerb}
               selectedKey={selectedKey}
+              serverToggleDisabled={serverToggleDisabled}
               where={where}
             />
           ))}
@@ -161,20 +167,24 @@ export function ConnectorsDirectory({
 function Group({
   busyKey,
   group,
+  installedOnly,
   onOpen,
   onPrefetch,
   onServerToggle,
   onVerb,
   selectedKey,
+  serverToggleDisabled,
   where
 }: {
   busyKey: null | string
   group: ConnectorGroupModel
+  installedOnly: boolean
   onOpen: (card: ConnectorCardModel) => void
   onPrefetch?: (card: ConnectorCardModel) => void
   onServerToggle?: (card: ConnectorCardModel, next: boolean) => void
   onVerb?: (card: ConnectorCardModel) => void
   selectedKey: null | string
+  serverToggleDisabled: boolean
   where: string
 }) {
   const { t } = useI18n()
@@ -193,7 +203,7 @@ function Group({
         </div>
       </header>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={installedOnly ? 'installed-capability-grid' : 'grid gap-3 sm:grid-cols-2'}>
         {group.cards.map(card => {
           const key = cardKey(card)
 
@@ -201,12 +211,14 @@ function Group({
             <ConnectorRowCard
               busy={busyKey === key}
               card={card}
+              installedOnly={installedOnly}
               key={key}
               onOpen={() => onOpen(card)}
               onPrefetch={onPrefetch ? () => onPrefetch(card) : undefined}
               onServerToggle={onServerToggle ? next => onServerToggle(card, next) : undefined}
               onVerb={onVerb ? () => onVerb(card) : undefined}
               selected={selectedKey === key}
+              serverToggleDisabled={serverToggleDisabled}
             />
           )
         })}
