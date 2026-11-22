@@ -29,6 +29,20 @@ it('creates a template in a new category, persists it, and searches its body und
   expect(localStorage.getItem('hermes:desktop:prompt-library:v1')).toContain('My check')
 })
 
+it('collapses only the selected category and lets it expand again', () => {
+  render(<TemplateLibrary />)
+  const email = screen.getByRole('button', { name: /Email & inbox/, expanded: true })
+
+  fireEvent.click(email)
+  expect(screen.getByRole('button', { name: /Email & inbox/, expanded: false })).toBe(email)
+  expect(screen.queryByRole('heading', { name: 'Inbox triage' })).toBeNull()
+  expect(screen.getByRole('heading', { name: 'Implementation plan' })).toBeTruthy()
+
+  fireEvent.click(email)
+  expect(screen.getByRole('button', { name: /Email & inbox/, expanded: true })).toBe(email)
+  expect(screen.getByRole('heading', { name: 'Inbox triage' })).toBeTruthy()
+})
+
 it('requires placeholder details and inserts only after explicit confirmation', () => {
   const insert = vi.fn()
 
