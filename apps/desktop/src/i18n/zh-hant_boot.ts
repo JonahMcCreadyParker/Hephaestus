@@ -4,7 +4,7 @@ import { zhHantSessionCommands } from './zh-hant_session_commands'
 
 export const zhHantBoot = {
   boot: {
-    ready: 'Hermes Desktop 已就緒',
+    ready: 'Hephaestus 已就緒',
     desktopBootFailedWithMessage: message => `桌面啟動失敗：${message}`,
     steps: {
       connectingGateway: '正在連線桌面閘道',
@@ -12,7 +12,7 @@ export const zhHantBoot = {
       loadingSessions: '正在載入最近工作階段',
       retryingRemoteBackend: '正在重新連線遠端 Hermes 後端…',
       startingDesktopConnection: '正在啟動桌面連線',
-      startingHermesDesktop: '正在啟動 Hermes Desktop…'
+      startingHermesDesktop: '正在啟動 Hephaestus…'
     },
     errors: {
       backgroundExited: 'Hermes 背景程序已結束。',
@@ -228,7 +228,7 @@ export const zhHantBoot = {
     viewDocs: '檢視安裝文件',
     installTo: '將安裝至',
     retryAfterRun: '我已執行 -- 重試',
-    setupChoiceTitle: '設定 Hermes Desktop',
+    setupChoiceTitle: '設定 Hephaestus',
     setupChoiceDesc: '將此應用程式連線到您已執行的 Hermes 閘道，或在這台電腦上本機安裝 Hermes。',
     connectExistingTitle: '連線到現有 Hermes',
     connectExistingShort: '連線現有環境',

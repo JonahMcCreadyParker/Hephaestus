@@ -33,9 +33,12 @@ const APP = (() => {
     const unpacked = ['win-unpacked', `win-${ARCH}-unpacked`]
       .map(name => path.join(RELEASE_ROOT, name))
       .find(exists)
+    const appDir = unpacked ?? path.join(RELEASE_ROOT, 'win-unpacked')
+    const brandedExe = path.join(appDir, 'Hephaestus.exe')
+
     return {
       appPath: unpacked,
-      binary: unpacked ? path.join(unpacked, 'Hermes.exe') : path.join(RELEASE_ROOT, 'win-unpacked', 'Hermes.exe'),
+      binary: exists(brandedExe) ? brandedExe : path.join(appDir, 'Hermes.exe'),
       resourcesPath: unpacked ? path.join(unpacked, 'resources') : path.join(RELEASE_ROOT, 'win-unpacked', 'resources'),
       asarPath: unpacked ? path.join(unpacked, 'resources', 'app.asar') : path.join(RELEASE_ROOT, 'win-unpacked', 'resources', 'app.asar'),
       unpackedDistIndex: unpacked

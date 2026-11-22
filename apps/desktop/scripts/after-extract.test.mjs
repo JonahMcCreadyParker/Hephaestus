@@ -23,16 +23,18 @@ test('the exe identity stamp is wired to afterExtract with ASAR integrity kept o
   assert.equal(builderConfig.disableAsarIntegrity, undefined)
 })
 
-test('stamps the stock electron.exe on win32 only, before it is renamed to Hermes.exe', async () => {
+test('stamps the configured Windows product name before electron.exe is renamed', async () => {
   stampExeIdentity.mockClear()
   const appOutDir = path.join('tmp', 'win-unpacked')
 
   await afterExtract({
     appOutDir,
     electronPlatformName: 'win32',
-    packager: { appInfo: { productFilename: 'Hermes' } }
+    packager: { appInfo: { productName: 'Hephaestus' } }
   })
-  assert.deepEqual(stampExeIdentity.mock.calls, [[path.join(appOutDir, 'electron.exe'), desktopRoot]])
+  assert.deepEqual(stampExeIdentity.mock.calls, [
+    [path.join(appOutDir, 'electron.exe'), desktopRoot, { productName: 'Hephaestus' }]
+  ])
 
   stampExeIdentity.mockClear()
   await afterExtract({

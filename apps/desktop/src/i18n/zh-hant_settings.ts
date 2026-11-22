@@ -279,7 +279,7 @@ export const zhHantSettings = {
       advanced: '進階'
     },
     searchPlaceholder: {
-      about: '關於 Hermes Desktop',
+      about: '關於 Hephaestus',
       config: '搜尋設定…',
       gateway: '閘道連線…',
       keys: '搜尋 API 金鑰…',

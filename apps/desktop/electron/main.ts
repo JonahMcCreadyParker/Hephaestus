@@ -43,6 +43,8 @@ import {
 } from 'electron'
 import type { Session } from 'electron'
 
+import desktopBrand from '../desktop-brand.json'
+
 import { type ActiveRuntimeState, classifyActiveRuntime } from './active-runtime-state'
 import { HERMES_API_EXPECTED_404 } from './api-expected-404'
 import {
@@ -316,6 +318,7 @@ import {
   tightenSecretFileMode,
   writeSecretFileAtomic
 } from './hardening'
+import { registerHephaestusShortcuts } from './hephaestus-shortcuts'
 import { isHermesProcess } from './hermes-process'
 import { assertNotPassiveSpawn } from './host-backend-singleton'
 import { requestHudClose } from './hud-close'
@@ -1774,9 +1777,8 @@ Menu.setApplicationMenu(null)
 
 // Windows toast notifications silently no-op unless an AppUserModelID is set:
 // `new Notification().show()` returns without error and nothing appears. The
-// AUMID must match the installed Start Menu shortcut's AUMID, which
-// electron-builder derives from the build `appId` (com.nousresearch.hermes) —
-// keep this string in sync with package.json `build.appId`. macOS/Linux don't
+// AUMID must match the installed Start Menu shortcut. The branded Windows
+// shortcut and shell use the same product identity. macOS/Linux don't
 // need this, so gate it on Windows. (Fixes: desktop approval/turn notifications
 // never firing on Windows.)
 if (IS_WINDOWS) {
@@ -1792,6 +1794,7 @@ if (IS_WINDOWS) {
 app.setAboutPanelOptions({
   applicationName: APP_NAME,
   applicationVersion: nativeAboutVersion(appVersionInfo(INSTALL_STAMP, '', app.getVersion())),
+  ...(PRODUCT_IDENTITY.appId === desktopBrand.appId ? { credits: desktopBrand.attribution } : {}),
   copyright: 'Copyright © 2026 Nous Research'
 })
 
@@ -11375,7 +11378,7 @@ async function startHermes(requestedProfile?: string, inheritsPrimary = false) {
   // otherwise SIGTERMs the running instance's live backend (#87295).
   if (!isPrimaryInstance) {
     rememberLog('[boot] non-primary instance: skipping backend machinery')
-    throw new Error('Hermes Desktop is already running in another window.')
+    throw new Error(`${APP_NAME} is already running in another window.`)
   }
 
   await reapOrphanedBackendsOnce()
@@ -11877,7 +11880,7 @@ function spawnSecondaryWindow({
     height: SESSION_WINDOW_MIN_HEIGHT,
     minWidth: SESSION_WINDOW_MIN_WIDTH,
     minHeight: SESSION_WINDOW_MIN_HEIGHT,
-    title: 'Hermes',
+    title: APP_NAME,
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
@@ -11982,7 +11985,7 @@ function spawnBrowserWindow(tabId) {
     height: BROWSER_WINDOW_HEIGHT,
     minWidth: BROWSER_WINDOW_MIN_WIDTH,
     minHeight: BROWSER_WINDOW_MIN_HEIGHT,
-    title: 'Hermes',
+    title: APP_NAME,
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
@@ -12094,7 +12097,7 @@ function createInstanceWindow(
     ...nextInstanceBounds(source),
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
-    title: 'Hermes',
+    title: APP_NAME,
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
@@ -13179,7 +13182,7 @@ function createWindow() {
     ),
     minWidth: WINDOW_MIN_WIDTH,
     minHeight: WINDOW_MIN_HEIGHT,
-    title: 'Hermes',
+    title: APP_NAME,
     // Frameless title bar on every platform so the renderer can paint the
     // "hide sidebar" button (and other left-side titlebar tools) flush with
     // the top edge — matching the macOS layout where the traffic lights sit
@@ -13545,7 +13548,7 @@ function createWindow() {
         const exit = details?.exitCode === undefined ? '' : `, exit code ${String(details.exitCode)}`
         rememberLog(`[renderer:main] renderer terminated while live (reason=${reason}${exit}); surfacing recovery page`)
         void loadRendererLoadErrorPage(mainWindow, {
-          title: 'Hermes desktop UI was terminated',
+          title: `${APP_NAME} closed unexpectedly`,
           errorDescription:
             `The desktop UI process was terminated unexpectedly (reason: ${reason}${exit}). ` +
             'Your sessions and the background gateway are unaffected — reload to continue.',
@@ -16775,6 +16778,7 @@ function showAboutPanelFresh(): void {
     app.setAboutPanelOptions({
       applicationName: APP_NAME,
       applicationVersion: skew.outOfSync ? `${display} — app build out of date, update the desktop app` : display,
+      ...(PRODUCT_IDENTITY.appId === desktopBrand.appId ? { credits: desktopBrand.attribution } : {}),
       copyright: 'Copyright © 2026 Nous Research'
     })
     app.showAboutPanel()
@@ -17371,6 +17375,16 @@ app.on('open-url', (event, url) => {
 })
 
 app.whenReady().then(() => {
+  if (
+    IS_WINDOWS &&
+    IS_PACKAGED &&
+    PRODUCT_IDENTITY.appId === desktopBrand.appId &&
+    path.basename(process.execPath) === `${desktopBrand.name}.exe` &&
+    process.env.HERMES_DESKTOP_USER_DATA_DIR === undefined
+  ) {
+    registerHephaestusShortcuts(rememberLog)
+  }
+
   if (NVIDIA_DRIVER_MAJOR !== null) {
     rememberLog(nvidiaEglRecovery.startupMessage)
   }

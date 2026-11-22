@@ -7,7 +7,7 @@ import type { BrowserWindow } from 'electron'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 const native = vi.hoisted(() => ({
-  app: { on: vi.fn(), quit: vi.fn(), dock: { show: vi.fn(), hide: vi.fn() } },
+  app: { getName: () => 'Hephaestus', on: vi.fn(), quit: vi.fn(), dock: { show: vi.fn(), hide: vi.fn() } },
   ipc: new Map<string, (...args: any[]) => any>(),
   windows: [] as any[],
   trays: [] as any[],

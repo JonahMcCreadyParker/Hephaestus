@@ -3,7 +3,7 @@ import type { TranslationOverrides } from './define-locale'
 // The boot screen's copy (including the update-hold screen), composed by es.ts.
 export const esBoot = {
   boot: {
-    ready: 'Hermes Desktop está listo',
+    ready: 'Hephaestus está listo',
     desktopBootFailedWithMessage: message => `Falló el arranque del escritorio: ${message}`,
     steps: {
       connectingGateway: 'Conectando el gateway de escritorio en vivo',
@@ -11,7 +11,7 @@ export const esBoot = {
       loadingSessions: 'Cargando sesiones recientes',
       retryingRemoteBackend: 'Reconectando al backend remoto de Hermes…',
       startingDesktopConnection: 'Iniciando la conexión de escritorio',
-      startingHermesDesktop: 'Iniciando Hermes Desktop…'
+      startingHermesDesktop: 'Iniciando Hephaestus…'
     },
     errors: {
       backgroundExited:

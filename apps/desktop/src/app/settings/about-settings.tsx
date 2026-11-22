@@ -9,6 +9,8 @@ import { $cloudOwnsUpdates } from '@/store/cloud-updates'
 import { $connection } from '@/store/session'
 import { $desktopVersion, checkBackendUpdates, refreshDesktopVersion } from '@/store/updates'
 
+import desktopBrand from '../../../desktop-brand.json'
+
 import { SectionHeading, SettingsContent } from './primitives'
 import { SETTING_IDS, settingElementId } from './settings-manifest'
 import { UninstallSection } from './uninstall-section'
@@ -58,6 +60,7 @@ function AppUpdatesSettings({ includeUninstall }: AppUpdatesSettingsProps): Reac
   return (
     <SettingsContent>
       <VersionHero version={version} />
+      <p className="text-center text-sm text-muted-foreground">{desktopBrand.attribution}</p>
       <div className="mx-auto mt-4 w-full max-w-2xl">
         {!cloudOwned.client && (
           <>

@@ -1,9 +1,11 @@
+import desktopBrand from '../../desktop-brand.json'
+
 import type { Translations } from './types'
 
 // The boot screen's copy (including the update-hold screen), composed by en.ts.
 export const enBoot = {
   boot: {
-    ready: 'Hermes Desktop is ready',
+    ready: `${desktopBrand.name} is ready`,
     desktopBootFailedWithMessage: message => `Desktop boot failed: ${message}`,
     steps: {
       connectingGateway: 'Connecting live desktop gateway',
@@ -11,7 +13,7 @@ export const enBoot = {
       loadingSessions: 'Loading recent sessions',
       retryingRemoteBackend: 'Reconnecting to the remote Hermes backend…',
       startingDesktopConnection: 'Starting desktop connection',
-      startingHermesDesktop: 'Starting Hermes Desktop…'
+      startingHermesDesktop: `Starting ${desktopBrand.name}…`
     },
     errors: {
       backgroundExited:
@@ -29,7 +31,7 @@ export const enBoot = {
       gatewaySignInRequired: 'Your remote Hermes signed you out',
       gatewaySignInRequiredDetail: 'Sign in again to reconnect. Your chats and settings are safe.',
       signInAgain: 'Sign in again',
-      ipcBridgeUnavailable: "Hermes Desktop couldn't talk to its own background layer. Restart the app."
+      ipcBridgeUnavailable: `${desktopBrand.name} couldn't talk to its own background layer. Restart the app.`
     },
     // Plain causes for a local backend boot failure (`classifyBootFailure`);
     // the raw output stays behind "Show recent logs".
@@ -97,7 +99,7 @@ export const enBoot = {
       recoveryHint:
         'This usually clears in a few minutes. If it does not: quit Hermes, end leftover git or hermes processes (or restart the computer), then open Hermes again.',
       checkAgain: 'Check again',
-      quit: 'Quit Hermes',
+      quit: `Quit ${desktopBrand.name}`,
       openLogs: 'Open logs',
       startAnyway: 'Start anyway…',
       confirmTitle: 'Start Hermes while the update still holds it?',

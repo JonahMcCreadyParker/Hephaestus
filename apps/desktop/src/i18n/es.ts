@@ -967,7 +967,7 @@ export const esOverrides = {
       advanced: 'Avanzado'
     },
     searchPlaceholder: {
-      about: 'Acerca de Hermes Desktop',
+      about: 'Acerca de Hephaestus',
       config: 'Buscar configuración...',
       gateway: 'Conexión del gateway...',
       keys: 'Buscar claves API...',
@@ -4153,7 +4153,7 @@ export const esOverrides = {
     discontinuedBody:
       'Esta versión de Hermes ya no tiene soporte y podría dejar de funcionar; desinstálala. Tus datos permanecen en el disco.',
     channels: { stable: 'Estable', canary: 'Canary' },
-    appName: 'Hermes',
+    appName: 'Hephaestus',
     availableBodyRelease: tag => `La versión ${tag} está lista para instalarse.`,
     releaseAvailable: tag => `La versión ${tag} está disponible.`,
     checkingShort: 'Comprobando…',
@@ -4329,7 +4329,7 @@ export const esOverrides = {
     viewDocs: 'Ver docs de instalación',
     installTo: 'Se instalará en',
     retryAfterRun: 'Ya lo ejecuté -- reintentar',
-    setupChoiceTitle: 'Configurar Hermes Desktop',
+    setupChoiceTitle: 'Configurar Hephaestus',
     setupChoiceDesc:
       'Conecta esta app con un gateway de Hermes que ya esté en ejecución o instala Hermes localmente en este equipo.',
     connectExistingTitle: 'Conectar con un Hermes existente',
@@ -4394,7 +4394,7 @@ export const esOverrides = {
   freeTier: {
     providerRowTitle: 'Nous · plan gratuito',
     providerRowPitch: 'Inicia sesión con una cuenta de Nous para desbloquear más modelos y herramientas.',
-    readyTitle: 'Hermes está listo.',
+    readyTitle: 'Hephaestus está listo.',
     readyCaption: 'Gratis · conectores incluidos',
     begin: 'Empezar',
     signInInstead: 'Iniciar sesión con una cuenta de Nous',
@@ -4576,7 +4576,7 @@ export const esOverrides = {
       update: 'actualizar',
       updateInProgress: 'Actualización en curso',
       commitsBehind: (count, branch) => `${count} ${count === 1 ? 'commit' : 'commits'} detrás de ${branch}`,
-      desktopVersion: version => `Hermes Desktop v${version}`,
+      desktopVersion: version => `Hephaestus v${version}`,
       backendVersion: version => `backend v${version}`,
       clientLabel: version => `cliente v${version}`,
       connectionSsh: host => `SSH: ${host}`,

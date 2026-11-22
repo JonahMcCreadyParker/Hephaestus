@@ -464,7 +464,7 @@ export const ruOverrides = {
       advanced: 'Дополнительно'
     },
     searchPlaceholder: {
-      about: 'О Hermes Desktop',
+      about: 'О Hephaestus',
       config: 'Поиск настроек…',
       gateway: 'Подключение шлюза…',
       keys: 'Поиск API-ключей…',
@@ -3085,7 +3085,7 @@ export const ruOverrides = {
     viewDocs: 'Открыть документацию по установке',
     installTo: 'Будет установлено в',
     retryAfterRun: 'Я выполнил — попробовать снова',
-    setupChoiceTitle: 'Настройка Hermes Desktop',
+    setupChoiceTitle: 'Настройка Hephaestus',
     setupChoiceDesc:
       'Подключите это приложение к уже работающему шлюзу Hermes или установите Hermes локально на этот компьютер.',
     connectExistingTitle: 'Подключиться к существующему Hermes',
@@ -3259,7 +3259,7 @@ export const ruOverrides = {
       update: 'обновление',
       updateInProgress: 'Обновление выполняется',
       commitsBehind: (count, branch) => `${count} ${RU_NOUN(count, 'коммит', 'коммита', 'коммитов')} позади ${branch}`,
-      desktopVersion: version => `Hermes Desktop v${version}`,
+      desktopVersion: version => `Hephaestus v${version}`,
       backendVersion: version => `Бэкенд v${version}`,
       clientLabel: version => `клиент v${version}`,
       connectionSsh: host => `SSH: ${host}`,

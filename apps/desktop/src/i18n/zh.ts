@@ -141,7 +141,7 @@ export const zhOverrides = {
   },
 
   boot: {
-    ready: 'Hermes 桌面版已就绪',
+    ready: 'Hephaestus已就绪',
     desktopBootFailedWithMessage: message => `桌面启动失败：${message}`,
     steps: {
       connectingGateway: '正在连接桌面网关',
@@ -149,7 +149,7 @@ export const zhOverrides = {
       loadingSessions: '正在加载最近会话',
       retryingRemoteBackend: '正在重新连接远程 Hermes 后端…',
       startingDesktopConnection: '正在启动桌面连接',
-      startingHermesDesktop: '正在启动 Hermes 桌面版…'
+      startingHermesDesktop: '正在启动 Hephaestus…'
     },
     errors: {
       backgroundExited: 'Hermes 后台进程已退出。',
@@ -708,7 +708,7 @@ export const zhOverrides = {
       advanced: '高级'
     },
     searchPlaceholder: {
-      about: '关于 Hermes Desktop',
+      about: '关于 Hephaestus',
       config: '搜索设置…',
       gateway: '网关连接…',
       keys: '搜索 API 密钥…',
@@ -3708,7 +3708,7 @@ export const zhOverrides = {
       noReturn: '后端未恢复在线。更新可能未完成——请检查后端主机。'
     },
     // Update-status overlay + version-details (mechanism-aware update UI).
-    appName: 'Hermes',
+    appName: 'Hephaestus',
     version: value => `版本 ${value}`,
     versionUnavailable: '版本不可用',
     checkNow: '立即检查',
@@ -3772,7 +3772,7 @@ export const zhOverrides = {
     viewDocs: '查看安装文档',
     installTo: '将安装到',
     retryAfterRun: '我已运行 -- 重试',
-    setupChoiceTitle: '设置 Hermes Desktop',
+    setupChoiceTitle: '设置 Hephaestus',
     setupChoiceDesc: '将此应用连接到你已运行的 Hermes 网关，或在这台电脑上本地安装 Hermes。',
     connectExistingTitle: '连接到现有 Hermes',
     connectExistingShort: '连接现有环境',
@@ -3839,7 +3839,7 @@ export const zhOverrides = {
   freeTier: {
     providerRowTitle: 'Nous · 免费层',
     providerRowPitch: '登录 Nous 账户以解锁更多模型和工具。',
-    readyTitle: 'Hermes 已就绪。',
+    readyTitle: 'Hephaestus 已就绪。',
     readyCaption: '免费 · 含连接器',
     begin: '开始',
     signInInstead: '改为登录 Nous 账户',
@@ -3997,7 +3997,7 @@ export const zhOverrides = {
       update: '更新',
       updateInProgress: '正在更新',
       commitsBehind: (count, branch) => `落后 ${branch} ${count} 个提交`,
-      desktopVersion: version => `Hermes Desktop v${version}`,
+      desktopVersion: version => `Hephaestus v${version}`,
       releaseAvailable: tag => `版本 ${tag} 可用。`,
       backendVersion: version => `后端 v${version}`,
       clientLabel: version => `客户端 v${version}`,

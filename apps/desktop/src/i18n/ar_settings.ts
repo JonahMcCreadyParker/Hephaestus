@@ -304,7 +304,7 @@ export const arSettings = {
       advanced: 'متقدم'
     },
     searchPlaceholder: {
-      about: 'حول Hermes Desktop',
+      about: 'حول Hephaestus',
       config: 'ابحث في الإعدادات...',
       gateway: 'اتصال البوابة...',
       keys: 'ابحث في مفاتيح API...',

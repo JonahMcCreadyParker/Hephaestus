@@ -166,7 +166,9 @@ def _desktop_packaged_executable_in(release_dir: Path) -> Optional[Path]:
         candidates = list(release_dir.glob("mac*/Hermes.app/Contents/MacOS/Hermes"))
     elif sys.platform == "win32":
         candidates = [
-            release_dir / d / "Hermes.exe" for d in ("win-unpacked", "win-ia32-unpacked", "win-arm64-unpacked")
+            release_dir / d / name
+            for d in ("win-unpacked", "win-ia32-unpacked", "win-arm64-unpacked")
+            for name in ("Hephaestus.exe", "Hermes.exe")
         ]
     else:
         candidates = [
@@ -188,6 +190,9 @@ def _desktop_packaged_executable_in(release_dir: Path) -> Optional[Path]:
         matching = [p for p in existing if _pe_machine_or_none(p) in expected]
         if matching:
             existing = matching
+        branded = [p for p in existing if p.name == "Hephaestus.exe"]
+        if branded:
+            existing = branded
     return max(existing, key=lambda p: p.stat().st_mtime)
 
 

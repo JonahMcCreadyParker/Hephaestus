@@ -462,6 +462,12 @@ export async function setupDeadBackend(options: DeadBackendOptions = {}): Promis
  */
 function resolvePackagedBinaryPath(): string {
   if (process.platform === 'win32') {
+    const brandedExe = path.join(RELEASE_ROOT, 'win-unpacked', 'Hephaestus.exe')
+
+    if (fs.existsSync(brandedExe)) {
+      return brandedExe
+    }
+
     return path.join(RELEASE_ROOT, 'win-unpacked', 'Hermes.exe')
   }
 

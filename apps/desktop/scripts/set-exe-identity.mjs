@@ -68,7 +68,7 @@ function wait(delay) {
 async function stampExeIdentity(
   exe,
   desktopRoot = resolve(import.meta.dirname, '..'),
-  { rcedit: runRcedit = rcedit, sleep = wait } = {}
+  { productName = 'Hermes', rcedit: runRcedit = rcedit, sleep = wait } = {}
 ) {
   if (!exe || !existsSync(exe)) {
     throw new Error(`target exe not found: ${exe}`)
@@ -86,8 +86,8 @@ async function stampExeIdentity(
   const options = {
     icon,
     'version-string': {
-      ProductName: 'Hermes',
-      FileDescription: 'Hermes',
+      ProductName: productName,
+      FileDescription: productName,
       CompanyName: 'Nous Research',
       LegalCopyright: 'Copyright (c) 2026 Nous Research'
     }
@@ -107,7 +107,7 @@ async function stampExeIdentity(
     }
   }
 
-  console.log('[set-exe-identity] done — Hermes icon + identity stamped')
+  console.log(`[set-exe-identity] done — ${productName} identity stamped`)
 }
 
 export { RCEDIT_COMMIT_RETRY_DELAYS_MS, stampExeIdentity }

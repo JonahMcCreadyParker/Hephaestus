@@ -98,6 +98,7 @@ describe('AboutSettings', (): void => {
     const { rerender } = render(<AboutSettings />)
 
     expect(screen.getByRole('heading', { name: en.updates.appName })).toBeTruthy()
+    expect(screen.getByText('A custom desktop app built on Hermes Agent by Nous Research.')).toBeTruthy()
     expect(screen.getByText(en.updates.versionDetailsInstallId)).toBeTruthy()
     expect(screen.getByText(en.updates.latestBody)).toBeTruthy()
     expect(screen.queryByText(en.updates.latestBodyBackend)).toBeNull()

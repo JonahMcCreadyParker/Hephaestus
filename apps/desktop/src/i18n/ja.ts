@@ -485,7 +485,7 @@ export const jaOverrides = {
       advanced: '詳細'
     },
     searchPlaceholder: {
-      about: 'Hermes Desktop について',
+      about: 'Hephaestus について',
       config: '設定を検索…',
       gateway: 'ゲートウェイ接続…',
       keys: 'API キーを検索…',
@@ -2831,7 +2831,7 @@ export const jaOverrides = {
     viewDocs: 'インストールドキュメントを見る',
     installTo: 'インストール先',
     retryAfterRun: '実行しました — 再試行',
-    setupChoiceTitle: 'Hermes Desktop をセットアップ',
+    setupChoiceTitle: 'Hephaestus をセットアップ',
     setupChoiceDesc:
       'すでに実行している Hermes ゲートウェイに接続するか、このコンピューターに Hermes をローカルインストールします。',
     connectExistingTitle: '既存の Hermes に接続',
@@ -3007,7 +3007,7 @@ export const jaOverrides = {
       update: '更新',
       updateInProgress: '更新中',
       commitsBehind: (count, branch) => `${branch} より ${count} コミット遅れています`,
-      desktopVersion: version => `Hermes Desktop v${version}`,
+      desktopVersion: version => `Hephaestus v${version}`,
       backendVersion: version => `バックエンド v${version}`,
       clientLabel: version => `クライアント v${version}`,
       connectionSsh: host => `SSH: ${host}`,
