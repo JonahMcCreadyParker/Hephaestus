@@ -57,6 +57,33 @@ installs the pinned engine, downloads the model with live progress, starts
 the server, and makes the model your default. Models already on disk are
 offered too. Ctrl+C pauses a download; choosing the model again resumes it.
 
+## Connect InferSSD on Windows
+
+[InferSSD](https://github.com/wici-ai/inferssd) can serve a GGUF model through
+an OpenAI-compatible API. Install its Windows runtime with
+`INFERSSD_HOME` set to the install folder and `INFERSSD_BIN_DIR` set to its
+`bin` subfolder. The scripts below default to `G:\InferSSD`.
+
+From this repository, start the server in PowerShell:
+
+```powershell
+.\scripts\start-inferssd.ps1 -ModelPath 'G:\InferSSD\models\qwen3.5-9b.gguf'
+```
+
+Pass an existing text-model GGUF, including a compatible GGUF from another
+runtime. InferSSD binds to `127.0.0.1:8080`. Keep the server running and register
+it with the current Hermes profile in a second terminal:
+
+```powershell
+.\scripts\register-inferssd-provider.ps1
+```
+
+Use the `/model custom:inferssd:...` command printed by the script in a
+Hermes chat. Registration updates the named `inferssd` provider. Your default
+model stays selected until you switch it. The scripts default to 64,000 tokens,
+the minimum Hermes requires. If you customize `-Port` or `-ContextLength`,
+pass the same values to both scripts.
+
 ## How Hermes picks what to download
 
 Every model in the catalog is priced against **your machine** before you
