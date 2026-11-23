@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -47,5 +47,19 @@ describe('TimelineRail', () => {
     expect(active.getAttribute('aria-current')).toBe('location')
     fireEvent.click(active)
     expect(onJump).toHaveBeenCalledWith('message-0')
+  })
+
+  it('pulses when scrolling activates a different prompt and then returns to its compact size', async () => {
+    const onJump = vi.fn()
+    const { rerender } = render(<TimelineRail activeIndex={0} entries={entries} loadingId={null} onJump={onJump} />)
+
+    rerender(<TimelineRail activeIndex={1} entries={entries} loadingId={null} onJump={onJump} />)
+    const current = screen.getByRole('button', { name: 'Message 1' })
+    const mark = current.querySelector<HTMLElement>('[data-slot="timeline-bar"]')
+
+    expect(current.getAttribute('aria-current')).toBe('location')
+    await waitFor(() => expect(mark?.style.transform).toBe('scaleX(1.0000)'))
+    await waitFor(() => expect(mark?.style.transform).toBe('scaleX(0.2500)'))
+    expect(onJump).not.toHaveBeenCalled()
   })
 })

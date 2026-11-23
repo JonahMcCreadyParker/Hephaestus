@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
+import { timelineBarWidth } from '@/components/ui/proximity-sidebar'
+
 import {
   activeTimelineIndex,
   deriveTimelineEntries,
   sameTimelineEntries,
-  timelineBarWidth,
   timelinePreview
 } from './timeline-data'
 

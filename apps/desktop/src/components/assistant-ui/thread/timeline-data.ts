@@ -16,13 +16,6 @@ export interface TimelineEntry {
 
 const PREVIEW_MAX = 120
 
-/** Shared, localized focus curve; the active tick always retains its maximum. */
-export function timelineBarWidth(index: number, activeIndex: number, hoverIndex: number | null): number {
-  const curve = (distance: number) => (Math.abs(distance) > 3 ? 0 : Math.exp(-(distance ** 2) / 1.35))
-
-  return 0.5 + 0.5 * Math.max(curve(index - activeIndex), hoverIndex === null ? 0 : curve(index - hoverIndex))
-}
-
 export const TIMELINE_REVEAL_EVENT = 'hermes:timeline-reveal'
 export const EARLIER_TIMELINE_ID = '__earlier-history__'
 
