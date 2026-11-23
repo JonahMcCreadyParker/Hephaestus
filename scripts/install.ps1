@@ -1554,17 +1554,17 @@ function Confirm-DesktopArtifact {
     Push-Location $InstallDir
     try {
         $desktopDir = Join-Path $InstallDir "apps\desktop"
-        $candidates = foreach ($exeName in @('Hephaestus.exe', 'Hermes.exe')) {
-            foreach ($directory in @('win-unpacked', 'win-ia32-unpacked', 'win-arm64-unpacked')) {
-                Join-Path $desktopDir "release\$directory\$exeName"
-            }
-        }
+        $candidates = @(
+            (Join-Path $desktopDir "release\win-unpacked\Hermes.exe"),
+            (Join-Path $desktopDir "release\win-ia32-unpacked\Hermes.exe"),
+            (Join-Path $desktopDir "release\win-arm64-unpacked\Hermes.exe")
+        )
         $desktopExe = $null
         foreach ($cand in $candidates) {
             if (Test-Path $cand) { $desktopExe = $cand; break }
         }
         if (-not $desktopExe) {
-            Fail "desktop build produced no executable under $desktopDir\release\*-unpacked" products_build_failed
+            Fail "desktop build produced no Hermes.exe under $desktopDir\release\*-unpacked" products_build_failed
         }
         Write-Ok "Desktop ready: $desktopExe"
 
@@ -1616,7 +1616,6 @@ function New-DesktopShortcuts {
     try {
         $shell = New-Object -ComObject WScript.Shell
         $workDir = Split-Path -Parent $TargetExe
-        $desktopName = [IO.Path]::GetFileNameWithoutExtension($TargetExe)
 
         # Prefer the standalone icon.ico (shipped beside the exe via
         # electron-builder extraResources -> resources/icon.ico) over the exe's
@@ -1633,8 +1632,8 @@ function New-DesktopShortcuts {
         }
 
         $targets = @(
-            (Join-Path ([Environment]::GetFolderPath('Programs')) "$desktopName.lnk"),
-            (Join-Path ([Environment]::GetFolderPath('Desktop')) "$desktopName.lnk")
+            (Join-Path ([Environment]::GetFolderPath('Programs')) 'Hermes.lnk'),
+            (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Hermes.lnk')
         )
 
         foreach ($lnkPath in $targets) {
@@ -1649,7 +1648,7 @@ function New-DesktopShortcuts {
                 # that outlives the app then blocks the next update's swap (#101789).
                 $sc.WorkingDirectory = $env:USERPROFILE
                 $sc.IconLocation = $iconLocation
-                $sc.Description = if ($desktopName -eq 'Hephaestus') { 'Hephaestus desktop for Hermes Agent' } else { 'Hermes Agent' }
+                $sc.Description = 'Hermes Agent'
                 $sc.Save()
                 Write-Ok "Shortcut created: $lnkPath"
             } catch {

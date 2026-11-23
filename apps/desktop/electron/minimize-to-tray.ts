@@ -183,15 +183,13 @@ export function createMinimizeToTray(options: Options) {
             height: process.platform === 'darwin' ? 18 : 24
           })
         )
-        const appName = app.getName()
-
-        tray.setToolTip(appName)
+        tray.setToolTip('Hermes')
         tray.setContextMenu(
           Menu.buildFromTemplate([
-            { label: `Show ${appName}`, click: restore },
+            { label: 'Show Hermes', click: restore },
             { type: 'separator' },
             // Do not bypass the ordinary active-work confirmation or teardown.
-            { label: `Quit ${appName}`, click: () => app.quit() }
+            { label: 'Quit Hermes', click: () => app.quit() }
           ])
         )
 

@@ -5,7 +5,7 @@
  * user is in another tab or app, so the title carries the same signals the
  * sidebar dots and titlebar badge do, ahead of the focused session's name:
  *
- *   (2) ⚠ Fix the flaky test · Hephaestus
+ *   (2) ⚠ Fix the flaky test · Hermes
  *
  * a count of unread finished sessions, then one mark — `⚠` when anything is
  * blocked on the user, else `●` while a turn runs — then the session.
@@ -21,8 +21,6 @@ import { computed } from 'nanostores'
 import { $workspaceOwnerLabels, workspaceOwnerTitle } from '@/components/pane-shell/workspace-scope'
 import { hostHas } from '@/lib/host-capabilities'
 
-import desktopBrand from '../../desktop-brand.json'
-
 import { $tabFlashText } from './browser-tab-attention'
 import { normalizeProfileKey } from './profile'
 import { $sessions, sessionMatchesStoredId } from './session'
@@ -30,7 +28,7 @@ import { $unreadSessionCount } from './session-dot-state'
 import { $focusedStoredSessionId } from './session-focus'
 import { $attentionSessionIds, $sessionTiles, $workingSessionIds } from './session-states'
 
-const APP_NAME = desktopBrand.name
+const APP_NAME = 'Hermes'
 
 export interface BrowserTabStatus {
   /** The focused session's name, or empty when it has none yet. */

@@ -8,8 +8,6 @@
 /// <reference types="node" />
 'use strict'
 
-const desktopBrand = require('./desktop-brand.json')
-
 const variants = {
   '': { display: 'Hermes', kebab: 'hermes', pascal: 'Hermes' },
   light: {
@@ -48,10 +46,7 @@ const canary = /^canary\.20\d{6}T\d{6}Z-v\d+\.\d+\.\d+$/.test(process.env.HERMES
 // seven-character commit suffix also names the CLI and fits MSIX's name cap.
 const buildCommitEnv = process.env.HERMES_BUILD_COMMIT || ''
 const buildCommit = /^[a-f0-9]{40}$/.test(buildCommitEnv) ? buildCommitEnv.slice(0, 7) : null
-// Source builds on Windows are the Hephaestus desktop. Tagged payloads and other
-// distributions keep their existing release identities and CLI compatibility.
-const hephaestus = process.platform === 'win32' && !variant && !buildCommit && !process.env.HERMES_PAYLOAD_TAG
-const displayName = hephaestus ? desktopBrand.name : buildCommit
+const displayName = buildCommit
   ? `${name.display} ${buildCommit}`
   : canary
     ? `${name.display} Canary`
@@ -73,15 +68,14 @@ const identity = {
   store,
   light,
   displayName,
-  appId: hephaestus ? desktopBrand.appId : `com.nousresearch.${name.kebab}${kebabSuffix}`,
+  appId: `com.nousresearch.${name.kebab}${kebabSuffix}`,
   // Store and commit builds do not publish a release feed.
-  channel: hephaestus || store || buildCommit ? null : light ? (canary ? 'light-canary' : 'light') : (canary ? 'canary' : 'latest'),
-  appNamePascal: hephaestus ? desktopBrand.name : `${name.pascal}${pascalSuffix}`,
-  artifactNamePascal: hephaestus ? desktopBrand.name : name.pascal,
+  channel: store || buildCommit ? null : light ? (canary ? 'light-canary' : 'light') : (canary ? 'canary' : 'latest'),
+  appNamePascal: `${name.pascal}${pascalSuffix}`,
+  artifactNamePascal: name.pascal,
   windowsExecutableName: kebabSuffix ? cliName : displayName,
   cliName,
-  msixAppIdWithOrg: hephaestus ? 'Hephaestus.Desktop' : `NousResearch.${name.pascal}${pascalSuffix}`,
-  ...(hephaestus ? { desktopUserDataName: 'Hermes' } : {}),
+  msixAppIdWithOrg: `NousResearch.${name.pascal}${pascalSuffix}`,
   ...(store
     ? {
         storeMsix: {

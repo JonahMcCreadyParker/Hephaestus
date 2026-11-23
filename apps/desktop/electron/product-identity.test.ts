@@ -130,8 +130,6 @@ test.each([
     channel: string,
     canaryChannel: string
   ): Promise<void> => {
-    // Exercise the upstream release lane separately from the Windows source build.
-    process.env.HERMES_PAYLOAD_TAG = 'v1.2.3'
     const stable: ProductIdentity = await identityForVariant(variant)
     assert.equal(stable.displayName, display)
     assert.equal(stable.channel, channel)
@@ -182,25 +180,6 @@ test.each([
     assert.deepEqual(await identityForVariant(variant), stable)
   }
 )
-
-test.skipIf(process.platform !== 'win32')('Hephaestus source builds keep the existing Hermes desktop data', async () => {
-  const identity = await identityForVariant(undefined)
-  const { applyDesktopIdentity: applyIdentity } = await import('./product-identity')
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hephaestus-userdata-'))
-  const app = { getPath: () => root, setPath: vi.fn(), setName: vi.fn() }
-
-  try {
-    assert.equal(identity.windowsExecutableName, 'Hephaestus')
-    assert.equal(identity.appId, 'io.github.jonahmccreadyparker.hephaestus')
-    assert.equal(identity.cliName, 'hermes')
-    assert.equal(identity.channel, null)
-    assert.equal(applyIdentity(app, identity), 'Hephaestus')
-    assert.deepEqual(app.setPath.mock.calls, [['userData', path.join(root, 'Hermes')]])
-    assert.deepEqual(app.setName.mock.calls, [['Hephaestus']])
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true })
-  }
-})
 
 test('light and bundled retain distinct OS markers from the full client', async (): Promise<void> => {
   const full: ProductIdentity = await identityForVariant(undefined)

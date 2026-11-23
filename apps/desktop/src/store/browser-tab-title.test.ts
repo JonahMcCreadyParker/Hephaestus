@@ -33,7 +33,7 @@ function reset() {
   $unreadFinishedMarkers.set({})
   $unreadFinishedSessionIds.set([])
   delete document.documentElement.dataset.hermesDesktopHost
-  document.title = 'Hephaestus'
+  document.title = 'Hermes'
 }
 
 describe('browserTabTitle', () => {
@@ -101,7 +101,7 @@ describe('installBrowserTabTitle', () => {
     $selectedStoredSessionId.set('s1')
     uninstall = installBrowserTabTitle()
 
-    expect(document.title).toBe('Hephaestus')
+    expect(document.title).toBe('Hermes')
   })
 
   it('leaves the native window title alone', () => {
@@ -110,6 +110,6 @@ describe('installBrowserTabTitle', () => {
     uninstall = installBrowserTabTitle()
     publishSessionState('r1', state('s1', { busy: true }))
 
-    expect(document.title).toBe('Hephaestus')
+    expect(document.title).toBe('Hermes')
   })
 })

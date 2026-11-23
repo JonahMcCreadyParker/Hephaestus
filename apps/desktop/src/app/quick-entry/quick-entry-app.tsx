@@ -11,8 +11,6 @@ import {
   quickEntryResultEvent
 } from '@/store/quick-entry'
 
-import desktopBrand from '../../../desktop-brand.json'
-
 // Native select popups do not reliably inherit the closed control's colors.
 // Paint both sides of the contrast pair on every option so Chromium cannot
 // combine a dark-theme foreground with an OS-provided light popup surface.
@@ -85,7 +83,7 @@ export function QuickEntryApp() {
 
     const offLateResult = api?.onLateResult(payload => {
       dispatch({
-        message: payload?.result?.message ?? `${desktopBrand.name} could not deliver the prompt.`,
+        message: payload?.result?.message ?? 'Hermes could not deliver the prompt.',
         ok: payload?.result?.ok === true,
         type: 'late-result'
       })
@@ -164,7 +162,7 @@ export function QuickEntryApp() {
                 dispatch({ type: 'dismiss' })
               }
             }}
-            placeholder={state.connected ? `Ask ${desktopBrand.name}…` : `Not connected. Open ${desktopBrand.name} to reconnect.`}
+            placeholder={state.connected ? 'Ask Hermes…' : 'Not connected — open Hermes to reconnect'}
             ref={inputRef}
             spellCheck={false}
             style={{
