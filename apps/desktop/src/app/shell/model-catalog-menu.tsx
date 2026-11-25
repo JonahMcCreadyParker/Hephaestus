@@ -1,12 +1,5 @@
 import type { ModelOptionProvider, ModelOptionsResult, ModelPricing } from '@hermes/shared'
-import {
-  DEFAULT_REASONING_EFFORT,
-  planBlocks,
-  sectionAt,
-  splitRecommended,
-  usageLevel,
-  usageTag
-} from '@hermes/shared'
+import { DEFAULT_REASONING_EFFORT, planBlocks, sectionAt, splitRecommended, usageLevel, usageTag } from '@hermes/shared'
 import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -793,36 +786,40 @@ export function ModelCatalogMenu({
               ))}
             </DropdownMenuGroup>
           ) : null}
-          {groups.map(group => {
-            const slug = group.provider.slug
+          {groups.map((group, index) => {
+            const section = providerSection(group.provider)
+            const { slug } = section
+            const showHeading = index === 0 || providerSection(groups[index - 1].provider).slug !== slug
 
             // Collapsed when the user stored it (and not while searching, which
             // spans every model regardless of collapse state).
             const collapsed = collapsedProviders.includes(slug) && !search
 
             return (
-              <DropdownMenuGroup className="py-0.5" key={slug}>
-                <DropdownMenuItem
-                  className={cn(
-                    catalogGroupLabel,
-                    'group/label flex w-full cursor-pointer items-center gap-1 !bg-transparent focus:!bg-transparent focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring focus-visible:-outline-offset-2'
-                  )}
-                  onSelect={event => {
-                    event.preventDefault()
-                    toggleCollapsedProvider(slug)
-                  }}
-                  textValue=""
-                >
-                  <span className="truncate">
-                    <HighlightMatches foldSeparators query={search} text={group.provider.name} />
-                  </span>
-                  <DisclosureCaret
-                    className="shrink-0 text-(--ui-text-tertiary) opacity-0 transition group-hover/label:opacity-100"
-                    open={!collapsed}
-                    size="0.625rem"
-                  />
-                  <ProviderStatusChip className="ml-auto mr-0.5" provider={group.provider} />
-                </DropdownMenuItem>
+              <DropdownMenuGroup className="py-0.5" key={group.provider.slug}>
+                {showHeading && (
+                  <DropdownMenuItem
+                    className={cn(
+                      catalogGroupLabel,
+                      'group/label flex w-full cursor-pointer items-center gap-1 !bg-transparent focus:!bg-transparent focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-ring focus-visible:-outline-offset-2'
+                    )}
+                    onSelect={event => {
+                      event.preventDefault()
+                      toggleCollapsedProvider(slug)
+                    }}
+                    textValue=""
+                  >
+                    <span className="truncate">
+                      <HighlightMatches foldSeparators query={search} text={section.name} />
+                    </span>
+                    <DisclosureCaret
+                      className="shrink-0 text-(--ui-text-tertiary) opacity-0 transition group-hover/label:opacity-100"
+                      open={!collapsed}
+                      size="0.625rem"
+                    />
+                    <ProviderStatusChip className="ml-auto mr-0.5" provider={group.provider} />
+                  </DropdownMenuItem>
+                )}
                 {/* Window plans past an allowance: one line saying what happens next (pay as you go
                     or wait for the reset) instead of a note on every row. */}
                 {!collapsed && !search ? <PlanLimitLine className="px-2 pb-1" provider={group.provider} /> : null}
@@ -1378,6 +1375,15 @@ function DownloadingModelRow({
 // Collapsed we show the user's chosen models (or the curated default); typing
 // spans every available model so anything is reachable past the cut. A search
 // is itself a narrowing action, so we do NOT cap per-provider matches.
+function providerSection(provider: ModelOptionProvider): { name: string; slug: string } {
+  const slug = provider.slug.replace(/^custom:/, '')
+  if (provider.is_user_defined && /^inferssd(?:-|$)/.test(slug)) {
+    return { name: 'InferSSD', slug: 'inferssd' }
+  }
+
+  return provider
+}
+
 function groupModels(
   providers: readonly ModelOptionProvider[],
   search: string,
@@ -1449,7 +1455,16 @@ function groupModels(
 
   // Stable, logical group order: alphabetical by provider name. (The backend
   // floats the current provider first, which would reshuffle on every switch.)
-  groups.sort((a, b) => a.provider.name.localeCompare(b.provider.name))
+  groups.sort((a, b) => {
+    const left = providerSection(a.provider)
+    const right = providerSection(b.provider)
+
+    return (
+      left.name.localeCompare(right.name) ||
+      left.slug.localeCompare(right.slug) ||
+      a.provider.slug.localeCompare(b.provider.slug)
+    )
+  })
 
   return groups
 }
@@ -1480,7 +1495,10 @@ function nousPricingPoll(data: ModelOptionsResult | undefined, updates: number):
 // current-model pin above, so a pinned custom model lands under "Other models" instead of taking the
 // first pick's "Recommended" heading.
 function recommendedFirst(provider: ModelOptionProvider, families: ModelFamily[]): ModelFamily[] {
-  const split = splitRecommended(provider, families.map(family => family.id))
+  const split = splitRecommended(
+    provider,
+    families.map(family => family.id)
+  )
 
   if (!split) {
     return families

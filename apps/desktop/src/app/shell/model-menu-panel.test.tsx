@@ -84,6 +84,31 @@ function renderPanel(onSelectModel = vi.fn(), onFollowDefaultModel?: () => void)
   return { onSelectModel, content }
 }
 
+it('shows InferSSD endpoints under one heading and collapses their models together', async () => {
+  getGlobalModelOptions.mockResolvedValue({
+    providers: [
+      { slug: 'inferssd', name: 'inferssd', is_user_defined: true, models: ['qwen3.5-9b.gguf'] },
+      {
+        slug: 'inferssd-deepseek',
+        name: 'inferssd-deepseek',
+        is_user_defined: true,
+        models: ['DeepSeek-V4.1-Flash-1017-UD-IQ1_S-00001-of-00005.gguf']
+      }
+    ]
+  })
+  const { content } = renderPanel()
+
+  const heading = await content.findByText('InferSSD')
+  expect(content.getAllByText('InferSSD')).toHaveLength(1)
+  expect(content.queryByText('inferssd-deepseek')).toBeNull()
+  expect(content.getByText(/qwen3\.5/i)).toBeTruthy()
+  expect(content.getByText(/deepseek.*flash/i)).toBeTruthy()
+
+  fireEvent.click(heading)
+  expect(content.queryByText(/qwen3\.5/i)).toBeNull()
+  expect(content.queryByText(/deepseek.*flash/i)).toBeNull()
+})
+
 describe('ModelMenuPanel MoA presets', () => {
   it('selecting a MoA preset switches PERSISTENTLY via onSelectModel (not the one-shot dispatch)', async () => {
     const { content, onSelectModel } = renderPanel()
