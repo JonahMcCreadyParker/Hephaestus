@@ -1198,6 +1198,7 @@ export interface ProfileDesktopOverlay {
 // A first-class, per-profile, human-named workspace spanning one or more
 // folders. Mirrors hermes_cli/projects_db.Project.to_dict().
 export interface ProjectFolder {
+  enabled?: boolean
   path: string
   label: null | string
   is_primary: boolean

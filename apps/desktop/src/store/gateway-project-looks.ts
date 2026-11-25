@@ -32,7 +32,11 @@ const basename = (path: string): string => folderKey(path).split(/[\\/]/).pop() 
 function looksByFolder(projects: ProjectInfo[]): Record<string, GatewayProjectLook> {
   const looks: Record<string, GatewayProjectLook> = {}
   const live = projects.filter(project => !project.archived)
-  const paths = (project: ProjectInfo) => [project.primary_path, ...(project.folders ?? []).map(folder => folder.path)]
+
+  const paths = (project: ProjectInfo) => [
+    project.primary_path,
+    ...(project.folders ?? []).filter(folder => folder.enabled !== false).map(folder => folder.path)
+  ]
 
   for (const project of [...live].sort((a, b) => Number(!a.primary_path) - Number(!b.primary_path))) {
     for (const path of paths(project)) {

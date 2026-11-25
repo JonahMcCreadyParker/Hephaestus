@@ -104,6 +104,17 @@ def test_add_folder_and_for_cwd(tmp_path):
     assert "branch" in resolved
 
 
+def test_folder_switch_updates_project_ownership(tmp_path):
+    path = str(tmp_path)
+    pid = _call("projects.create", {"name": "Repo", "folders": [path]})["project"]["id"]
+
+    for enabled in (False, True):
+        updated = _call("projects.set_folder_enabled", {"id": pid, "path": path, "enabled": enabled})["project"]
+        assert updated["folders"][0]["enabled"] is enabled
+        owner = _call("projects.for_cwd", {"cwd": path})["project"]
+        assert (owner["id"] if owner else None) == (pid if enabled else None)
+
+
 def test_project_info_for_cwd_returns_status_payload(tmp_path):
     # The status-surface resolver returns the owning project's identity for a
     # nested cwd — the shape the TUI status label + /status read.

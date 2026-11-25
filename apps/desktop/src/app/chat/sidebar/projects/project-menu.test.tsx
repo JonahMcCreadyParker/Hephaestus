@@ -3,7 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { dismissAutoProject, restoreAutoProject } from '@/store/layout'
 import { notify } from '@/store/notifications'
-import { revealPath } from '@/store/projects'
+import { revealPath, setProjectFolderEnabled } from '@/store/projects'
 
 import { ProjectMenu } from './project-menu'
 import type { SidebarProjectTree } from './workspace-groups'
@@ -88,7 +88,8 @@ vi.mock('@/store/projects', async () => ({
   openProjectRename: vi.fn(),
   revealPath: vi.fn(),
   setActiveProject: vi.fn(),
-  setProjectAppearance: vi.fn().mockResolvedValue(false)
+  setProjectAppearance: vi.fn().mockResolvedValue(false),
+  setProjectFolderEnabled: vi.fn().mockResolvedValue(undefined)
 }))
 
 const project = {
@@ -128,6 +129,8 @@ describe('ProjectMenu', () => {
     expect(screen.getByText('/repo')).toBeTruthy()
     expect(screen.getByText('/docs')).toBeTruthy()
     expect(screen.getByText('primary')).toBeTruthy()
+    fireEvent.click(screen.getByRole('switch', { name: 'Documents (/docs)' }))
+    expect(setProjectFolderEnabled).toHaveBeenCalledWith('p1', '/docs', false)
   })
 
   // When anchorRef is absent, PopoverAnchor wraps the dropdown trigger so the

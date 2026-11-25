@@ -318,6 +318,8 @@ class _FolderIndex:
         self._by_path: dict[str, tuple[dict, int]] = {}
         for project in projects:
             for folder in project.get("folders") or []:
+                if not folder.get("enabled", True):
+                    continue
                 segs = _comparison_segments(folder.get("path") or "")
                 # Deepest folder wins; ties keep the first project (scan order).
                 if segs and len(segs) > self._by_path.get("/".join(segs), (None, -1))[1]:
@@ -448,7 +450,7 @@ def build_tree(
         psessions = by_project.get(project["id"], [])
         _scope(psessions)
         repos = _build_repos(psessions, resolve, hydrate)
-        repos = _seed_folder_repos(repos, project.get("folders") or [], resolve)
+        repos = _seed_folder_repos(repos, [f for f in project.get("folders") or [] if f.get("enabled", True)], resolve)
         result.append(_project_node(
             project["id"], project.get("name") or project["id"], project.get("primary_path"), repos,
             len(psessions), _last_active(psessions), _previews(psessions), psessions,

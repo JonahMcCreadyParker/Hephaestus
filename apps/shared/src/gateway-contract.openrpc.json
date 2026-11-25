@@ -2959,6 +2959,24 @@
       }
     },
     {
+      "name": "projects.set_folder_enabled",
+      "summary": "Suspend or restore a folder's project association.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/ProjectFolderEnabledParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/ProjectResult"
+        }
+      }
+    },
+    {
       "name": "projects.set_primary",
       "summary": "Make one attached folder the project's primary path.",
       "params": [
@@ -32340,12 +32358,53 @@
             ],
             "default": null,
             "title": "Added At"
+          },
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
           }
         },
         "required": [
           "path"
         ],
         "title": "ProjectFolder",
+        "type": "object"
+      },
+      "ProjectFolderEnabledParams": {
+        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Profile"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "enabled"
+        ],
+        "title": "ProjectFolderEnabledParams",
         "type": "object"
       },
       "ProjectFolderParams": {

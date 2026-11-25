@@ -76,6 +76,7 @@ _register_project_mutator(
     lambda p: {"label": p.get("label"), "is_primary": bool(p.get("is_primary"))})
 _register_project_mutator("remove_folder", "remove_folder", True, lambda p: {})
 _register_project_mutator("set_primary", "set_primary", True, lambda p: {})
+_register_project_mutator("set_folder_enabled", "set_folder_enabled", True, lambda p: {"enabled": p["enabled"]})
 
 
 @_projects_method("projects.list")
@@ -405,7 +406,7 @@ def _build_project_tree(
             persistence, session_limit, include_discovered=include_discovered)
     # build_tree also resolves declared project folders and discovered roots — warm them too.
     git_probe.warm_roots(
-        [str(f.get("path") or "") for p in projects for f in (p.get("folders") or [])]
+        [str(f.get("path") or "") for p in projects for f in (p.get("folders") or []) if f.get("enabled", True)]
         + [str(r.get("root") or "") for r in discovered])
     tree = project_tree.build_tree(
         projects, sessions, discovered, git_probe.resolve, preview_limit=preview_limit,

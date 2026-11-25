@@ -27,6 +27,7 @@ class ProjectFolder(Result):
     label: str | None = None
     is_primary: bool = False
     added_at: int | None = None
+    enabled: bool = True
 
 
 class ProjectInfo(Result):
@@ -123,6 +124,14 @@ method("projects.remove_folder", params=ProjectFolderParams, result=ProjectResul
        doc="Detach a folder from a project.")
 method("projects.set_primary", params=ProjectFolderParams, result=ProjectResult,
        doc="Make one attached folder the project's primary path.")
+
+
+class ProjectFolderEnabledParams(ProjectFolderParams):
+    enabled: bool
+
+
+method("projects.set_folder_enabled", params=ProjectFolderEnabledParams, result=ProjectResult,
+       doc="Suspend or restore a folder's project association.")
 
 
 class ProjectsArchiveParams(ProjectIdParams):

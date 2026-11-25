@@ -3,6 +3,7 @@ import { useStore } from '@nanostores/react'
 import type * as React from 'react'
 import { useState } from 'react'
 
+import { CatalogSwitch } from '@/app/capabilities/catalog/catalog-switch'
 import {
   type ActionItemSpec,
   ActionsContextMenu,
@@ -34,7 +35,8 @@ import {
   openProjectRename,
   revealPath,
   setActiveProject,
-  setProjectAppearance
+  setProjectAppearance,
+  setProjectFolderEnabled
 } from '@/store/projects'
 
 import { SIDEBAR_FOCUS_VISIBLE } from '../chrome'
@@ -194,9 +196,27 @@ export function ProjectMenu({
   const p = t.sidebar.projects
   const [appearanceOpen, setAppearanceOpen] = useState(false)
   const [foldersOpen, setFoldersOpen] = useState(false)
+  const [savingFolder, setSavingFolder] = useState(false)
   const savedProject = useStore($projects).find(item => item.id === project.id)
-  const folders = savedProject?.folders ?? (project.path ? [{ path: project.path, label: null, is_primary: true }] : [])
+
+  const folders =
+    savedProject?.folders ??
+    (project.path ? [{ path: project.path, label: null, is_primary: true, enabled: true }] : [])
+
   const canReveal = project.connectionId ? project.connectionId === LOCAL_CONNECTION_ID : !isDesktopFsRemoteMode()
+
+  const toggleFolder = async (path: string, checked: boolean) => {
+    setSavingFolder(true)
+
+    try {
+      await setProjectFolderEnabled(project.id, path, checked)
+    } catch (err) {
+      notify({ kind: 'error', message: err instanceof Error ? err.message : String(err) })
+    } finally {
+      setSavingFolder(false)
+    }
+  }
+
   // Open toward the content area: right when the sidebar is on the left, left
   // when the panes are flipped (sidebar on the right).
   const panesFlipped = useStore($panesFlipped)
@@ -320,9 +340,20 @@ export function ProjectMenu({
           <ul className="max-h-[50vh] space-y-3 overflow-y-auto">
             {folders.map(folder => (
               <li className="space-y-1 rounded-md border border-border p-2" key={folder.path}>
-                <div className="text-sm font-medium">
-                  {folder.label || folder.path.split(/[\\/]/).filter(Boolean).at(-1) || folder.path}
-                  {folder.is_primary && <span className="ml-2 text-xs text-muted-foreground">{p.primaryBadge}</span>}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-medium">
+                    {folder.label || folder.path.split(/[\\/]/).filter(Boolean).at(-1) || folder.path}
+                    {folder.is_primary && <span className="ml-2 text-xs text-muted-foreground">{p.primaryBadge}</span>}
+                  </div>
+                  {savedProject && (
+                    <CatalogSwitch
+                      aria-label={folder.label ? `${folder.label} (${folder.path})` : folder.path}
+                      checked={folder.enabled !== false}
+                      disabled={savingFolder}
+                      onCheckedChange={checked => void toggleFolder(folder.path, checked)}
+                      showStateIcon
+                    />
+                  )}
                 </div>
                 <div className="select-text break-all text-xs text-muted-foreground">{folder.path}</div>
                 <div className="flex gap-3 text-xs">

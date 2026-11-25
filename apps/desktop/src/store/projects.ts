@@ -1100,7 +1100,7 @@ function projectInfoToTreeNode(project: ProjectInfo): SidebarProjectTree {
   return {
     id: project.id,
     label: project.name || project.id,
-    path: project.primary_path ?? project.folders?.[0]?.path ?? null,
+    path: project.primary_path ?? project.folders?.find(folder => folder.enabled !== false)?.path ?? null,
     color: project.color ?? null,
     icon: project.icon ?? null,
     isAuto: false,
@@ -1345,6 +1345,21 @@ export async function addProjectFolder(
     )
   )
   reconcileProjects()
+}
+
+export async function setProjectFolderEnabled(id: string, path: string, enabled: boolean): Promise<void> {
+  const context = await activeProjectsContext(writableProjectProfile())
+
+  const { project } = await gatewayRequestOn<{ project: ProjectInfo }>(
+    context.gateway,
+    'projects.set_folder_enabled',
+    projectParams({ id, path, enabled }, context.profile)
+  )
+
+  if (stillOnWritableProjectOwner(context)) {
+    $projects.set($projects.get().map(item => (item.id === id ? project : item)))
+    reconcileProjects()
+  }
 }
 
 // True when the session currently open in the main pane belongs to `projectId`.

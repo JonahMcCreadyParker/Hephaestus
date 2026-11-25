@@ -2579,6 +2579,7 @@ export interface ProjectFolder {
   label?: string | null
   is_primary?: boolean
   added_at?: number | null
+  enabled?: boolean
 }
 /** Any method addressed at one stored project (``5062`` when the id resolves to nothing). */
 export interface ProjectIdParams {
@@ -2626,6 +2627,12 @@ export interface ProjectFolderParams {
   profile?: string | null
   id: string
   path: string
+}
+export interface ProjectFolderEnabledParams {
+  profile?: string | null
+  id: string
+  path: string
+  enabled: boolean
 }
 export interface ProjectsArchiveParams {
   profile?: string | null
@@ -6716,6 +6723,8 @@ export interface RpcMethods {
   'projects.remove_folder': { params: ProjectFolderParams; result: ProjectResult }
   /** Switch (or clear) the active project for the profile. */
   'projects.set_active': { params: ProjectsSetActiveParams; result: ActiveIdResult }
+  /** Suspend or restore a folder's project association. */
+  'projects.set_folder_enabled': { params: ProjectFolderEnabledParams; result: ProjectResult }
   /** Make one attached folder the project's primary path. */
   'projects.set_primary': { params: ProjectFolderParams; result: ProjectResult }
   /** Project → repo → lane overview with counts and a few preview sessions per project. */
@@ -7083,6 +7092,7 @@ export const RPC_METHODS = [
   'projects.record_repos',
   'projects.remove_folder',
   'projects.set_active',
+  'projects.set_folder_enabled',
   'projects.set_primary',
   'projects.tree',
   'projects.update',

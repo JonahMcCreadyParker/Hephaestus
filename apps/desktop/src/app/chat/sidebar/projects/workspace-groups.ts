@@ -465,7 +465,7 @@ export function liveSessionProjectId(
     }
 
     for (const folder of project.folders) {
-      if (isPathUnder(folder.path, cwd) || isPathUnder(folder.path, repoRoot)) {
+      if (folder.enabled !== false && (isPathUnder(folder.path, cwd) || isPathUnder(folder.path, repoRoot))) {
         const len = segments(folder.path).length
 
         if (len > bestLen) {

@@ -39,6 +39,24 @@ def test_discovery_policy_change_clears_only_discovered_rows(conn):
 
 
 
+def test_suspend_and_restore_folder_association(conn, tmp_path):
+    first, second = str(tmp_path / "first"), str(tmp_path / "second")
+    pid = pdb.create_project(conn, name="Thesis", folders=[first, second])
+
+    pdb.set_folder_enabled(conn, pid, first, enabled=False)
+    project = pdb.get_project(conn, pid)
+    assert project.primary_path == second
+    assert not next(folder for folder in project.folders if folder.path == first).enabled
+    assert pdb.project_for_path(conn, first) is None
+
+    pdb.set_folder_enabled(conn, pid, second, enabled=False)
+    assert pdb.get_project(conn, pid).primary_path is None
+
+    pdb.set_folder_enabled(conn, pid, first, enabled=True)
+    assert pdb.get_project(conn, pid).primary_path == first
+    assert pdb.project_for_path(conn, first).id == pid
+
+
 def test_create_get_list(conn):
     pid = pdb.create_project(conn, name="Hermes Agent", folders=["/tmp/hermes"])
     proj = pdb.get_project(conn, pid)

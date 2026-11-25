@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS project_folders (
     label       TEXT,
     is_primary  INTEGER NOT NULL DEFAULT 0,
     added_at    INTEGER NOT NULL,
+    enabled     INTEGER NOT NULL DEFAULT 1,
     PRIMARY KEY (project_id, path)
 );
 
@@ -128,6 +129,8 @@ def connect(db_path: Optional[Path] = None) -> sqlite3.Connection:
         for col in _OPTIONAL_PROJECT_COLUMNS:
             if col not in cols:
                 _add_column_if_missing(conn, "projects", col, f"{col} TEXT")
+        if not any(row["name"] == "enabled" for row in conn.execute("PRAGMA table_info(project_folders)")):
+            _add_column_if_missing(conn, "project_folders", "enabled", "enabled INTEGER NOT NULL DEFAULT 1")
         _INITIALIZED_PATHS.add(resolved)
 
     return open_db(path, db_label="projects.db", foreign_keys=True, initialize=_initialize)
@@ -151,9 +154,11 @@ class ProjectFolder:
     label: Optional[str] = None
     is_primary: bool = False
     added_at: int = 0
+    enabled: bool = True
 
     def to_dict(self) -> dict:
-        return {"path": self.path, "label": self.label, "is_primary": bool(self.is_primary), "added_at": self.added_at}
+        return {"path": self.path, "label": self.label, "is_primary": bool(self.is_primary), "added_at": self.added_at,
+                "enabled": self.enabled}
 
 
 @dataclass
@@ -179,13 +184,13 @@ def _load_project(conn: sqlite3.Connection, row: sqlite3.Row) -> Project:
     """Materialize a ``projects`` row together with its folders."""
     keys = row.keys()
     folders = conn.execute(
-        "SELECT path, label, is_primary, added_at FROM project_folders WHERE project_id = ? ORDER BY is_primary DESC, added_at ASC",
+        "SELECT path, label, is_primary, added_at, enabled FROM project_folders WHERE project_id = ? ORDER BY is_primary DESC, added_at ASC",
         (row["id"],),
     ).fetchall()
     return Project(
         id=row["id"], slug=row["slug"], name=row["name"], created_at=row["created_at"],
         archived=bool(row["archived"]) if "archived" in keys else False,
-        folders=[ProjectFolder(r["path"], r["label"], bool(r["is_primary"]), r["added_at"]) for r in folders],
+        folders=[ProjectFolder(r["path"], r["label"], bool(r["is_primary"]), r["added_at"], bool(r["enabled"])) for r in folders],
         **{f: row[f] for f in _OPTIONAL_ROW_FIELDS if f in keys},
     )
 
@@ -210,7 +215,7 @@ def find_by_primary_path(conn: sqlite3.Connection, path: str, *, include_archive
     key = _primary_path_key(path)
     for proj in list_projects(conn, include_archived=include_archived) if key else ():
         primary = proj.primary_path or next(
-            (f.path for f in proj.folders if f.is_primary), proj.folders[0].path if proj.folders else None
+            (f.path for f in proj.folders if f.enabled), None
         )
         if primary and _primary_path_key(primary) == key:
             return proj
@@ -326,6 +331,7 @@ def add_folder(conn: sqlite3.Connection, project_id: str, path: str, *, label: O
         )
         if label is not None:
             conn.execute("UPDATE project_folders SET label = ? WHERE project_id = ? AND path = ?", (label, project_id, norm))
+        conn.execute("UPDATE project_folders SET enabled = 1 WHERE project_id = ? AND path = ?", (project_id, norm))
         # An explicit primary, or the first folder of an empty project, becomes primary.
         if is_primary or conn.execute(
             "SELECT 1 FROM project_folders WHERE project_id = ? AND is_primary = 1", (project_id,)
@@ -343,17 +349,31 @@ def remove_folder(conn: sqlite3.Connection, project_id: str, path: str) -> bool:
         ).fetchone()
         cur = conn.execute("DELETE FROM project_folders WHERE project_id = ? AND path = ?", (project_id, norm))
         if was_primary is not None and was_primary["is_primary"]:
-            nxt = conn.execute(
-                "SELECT path FROM project_folders WHERE project_id = ? ORDER BY added_at ASC LIMIT 1", (project_id,)
-            ).fetchone()
-            if nxt and nxt["path"]:
-                _set_primary_locked(conn, project_id, nxt["path"])
-            else:
-                conn.execute("UPDATE projects SET primary_path = NULL WHERE id = ?", (project_id,))
+            _choose_primary_locked(conn, project_id)
     return cur.rowcount > 0
 
 
-def _set_primary_locked(conn: sqlite3.Connection, project_id: str, path: str) -> None:
+def _choose_primary_locked(conn: sqlite3.Connection, project_id: str) -> None:
+    folder = conn.execute(
+        "SELECT path FROM project_folders WHERE project_id = ? AND enabled = 1 "
+        "ORDER BY is_primary DESC, added_at ASC, path ASC LIMIT 1", (project_id,)
+    ).fetchone()
+    _set_primary_locked(conn, project_id, folder["path"] if folder else None)
+
+
+def set_folder_enabled(conn: sqlite3.Connection, project_id: str, path: str, *, enabled: bool) -> None:
+    """Suspend or restore ownership without removing the folder from the project record."""
+    with write_txn(conn):
+        changed = conn.execute(
+            "UPDATE project_folders SET enabled = ? WHERE project_id = ? AND path = ?",
+            (int(enabled), project_id, _normalize_path(path)),
+        )
+        if not changed.rowcount:
+            raise ValueError("folder is not linked to this project")
+        _choose_primary_locked(conn, project_id)
+
+
+def _set_primary_locked(conn: sqlite3.Connection, project_id: str, path: Optional[str]) -> None:
     """Set the primary folder (caller already holds a write txn)."""
     conn.execute("UPDATE project_folders SET is_primary = 0 WHERE project_id = ?", (project_id,))
     conn.execute("UPDATE project_folders SET is_primary = 1 WHERE project_id = ? AND path = ?", (project_id, path))
@@ -363,7 +383,7 @@ def _set_primary_locked(conn: sqlite3.Connection, project_id: str, path: str) ->
 def set_primary(conn: sqlite3.Connection, project_id: str, path: str) -> bool:
     norm = _normalize_path(path)
     with write_txn(conn):
-        if conn.execute("SELECT 1 FROM project_folders WHERE project_id = ? AND path = ?", (project_id, norm)).fetchone() is None:
+        if conn.execute("SELECT 1 FROM project_folders WHERE project_id = ? AND path = ? AND enabled = 1", (project_id, norm)).fetchone() is None:
             return False
         _set_primary_locked(conn, project_id, norm)
     return True
@@ -475,9 +495,9 @@ def project_for_path(conn: sqlite3.Connection, path: str, *, include_archived: b
     if not str(path or "").strip():
         return None
     target = _normalize_path(path)
-    sql = "SELECT pf.project_id AS pid, pf.path AS folder FROM project_folders pf JOIN projects p ON p.id = pf.project_id"
+    sql = "SELECT pf.project_id AS pid, pf.path AS folder FROM project_folders pf JOIN projects p ON p.id = pf.project_id WHERE pf.enabled = 1"
     if not include_archived:
-        sql += " WHERE p.archived = 0"
+        sql += " AND p.archived = 0"
 
     def owns(folder: str) -> bool:
         stem = folder.rstrip("/\\")
