@@ -71,3 +71,25 @@ export function layoutGitHistory({ commits, refs, main_ref }: GitHistory) {
 
   return nodes.reverse()
 }
+
+export function mainLaneJunctions(nodes: ReturnType<typeof layoutGitHistory>) {
+  const laneByHash = new Map(nodes.map(node => [node.commit.hash, node.lane]))
+  const forks = new Set<string>()
+  const merges = new Set<string>()
+
+  for (const { commit, lane } of nodes) {
+    for (const parent of commit.parents) {
+      const parentLane = laneByHash.get(parent)
+
+      if (parentLane === 0 && lane !== 0) {
+        forks.add(parent)
+      }
+
+      if (lane === 0 && parentLane !== undefined && parentLane !== 0) {
+        merges.add(commit.hash)
+      }
+    }
+  }
+
+  return { forks, merges }
+}

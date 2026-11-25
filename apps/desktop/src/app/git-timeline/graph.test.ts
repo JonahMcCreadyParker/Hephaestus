@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 
-import { type GitCommit, layoutGitHistory } from './graph'
+import { type GitCommit, layoutGitHistory, mainLaneJunctions } from './graph'
 
 const commit = (hash: string, ...parents: string[]): GitCommit => ({
   author: 'Author',
@@ -32,4 +32,5 @@ it('centers the main first-parent history and keeps both merge parents in separa
   expect(nodes.map(node => node.lane)).toEqual([0, -1, 1, 0, 0])
   expect(nodes[2].labels).toEqual(['topic'])
   expect(nodes[4].commit.parents).toEqual(['main', 'one', 'two'])
+  expect(mainLaneJunctions(nodes)).toEqual({ forks: new Set(['fork']), merges: new Set(['merge']) })
 })

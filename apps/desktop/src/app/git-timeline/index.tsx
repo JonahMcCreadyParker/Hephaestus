@@ -9,7 +9,7 @@ import { $activeConnectionId } from '@/store/connections'
 import { $activeGatewayProfile } from '@/store/profile'
 import { $projectTree, refreshProjectTree, requestProjectGit } from '@/store/projects'
 
-import { type GitCommit, type GitHistory, layoutGitHistory, shortRef } from './graph'
+import { type GitCommit, type GitHistory, layoutGitHistory, mainLaneJunctions, shortRef } from './graph'
 
 const COLUMN = 68
 const LANE_HEIGHT = 60
@@ -38,6 +38,7 @@ function CommitDetails({ commit, labels }: { commit: GitCommit; labels: string[]
 
 function CommitGraph({ history }: { history: GitHistory }) {
   const graph = useMemo(() => layoutGitHistory(history), [history])
+  const { forks, merges } = useMemo(() => mainLaneJunctions(graph), [graph])
   const scroll = useRef<HTMLDivElement>(null)
   const radius = Math.max(1, ...graph.map(node => Math.abs(node.lane)))
   const center = (radius + 1) * LANE_HEIGHT
@@ -50,6 +51,7 @@ function CommitGraph({ history }: { history: GitHistory }) {
   }))
 
   const byHash = new Map(points.map(point => [point.commit.hash, point]))
+  const latestJunction = points.findLast(point => merges.has(point.commit.hash) || forks.has(point.commit.hash))
 
   useLayoutEffect(() => {
     if (scroll.current) {
@@ -64,6 +66,21 @@ function CommitGraph({ history }: { history: GitHistory }) {
       className="min-h-0 flex-1 overflow-auto rounded-lg border border-border"
       ref={scroll}
     >
+      <div className="sticky left-0 top-2 z-10 flex h-0 w-max items-start px-2">
+        {latestJunction ? (
+          <Button
+            onClick={() => scroll.current?.scrollTo({ left: latestJunction.x - scroll.current.clientWidth / 2 })}
+            size="sm"
+            variant="outline"
+          >
+            Show latest fork or merge
+          </Button>
+        ) : (
+          <span className="rounded bg-background px-2 py-1 text-xs text-muted-foreground">
+            No main-lane fork or merge in this history window
+          </span>
+        )}
+      </div>
       <div className="flex min-h-full items-center" style={{ minWidth: width }}>
         <div className="relative w-full" style={{ height: center * 2 }}>
           <svg aria-hidden="true" className="pointer-events-none absolute inset-0 size-full">
@@ -80,6 +97,7 @@ function CommitGraph({ history }: { history: GitHistory }) {
                 const start = child.lane === 0 ? child.x - bend * 2 : parent.x
                 const end = start + bend * 2
                 const color = laneColor(parent.lane || child.lane)
+                const junction = (parent.lane === 0) !== (child.lane === 0)
 
                 return (
                   <path
@@ -87,8 +105,8 @@ function CommitGraph({ history }: { history: GitHistory }) {
                     fill="none"
                     key={`${hash}:${child.commit.hash}`}
                     stroke={color}
-                    strokeOpacity={0.78}
-                    strokeWidth={2}
+                    strokeOpacity={junction ? 1 : 0.78}
+                    strokeWidth={junction ? 3 : 2}
                   />
                 )
               })
@@ -102,6 +120,11 @@ function CommitGraph({ history }: { history: GitHistory }) {
           </div>
           {points.map(({ commit, labels, lane, x, y }) => (
             <div className="absolute" key={commit.hash} style={{ left: x, top: y }}>
+              {(forks.has(commit.hash) || merges.has(commit.hash)) && (
+                <span className="pointer-events-none absolute bottom-4 left-0 -translate-x-1/2 whitespace-nowrap rounded border border-primary/40 bg-background px-1 text-xs font-medium">
+                  {merges.has(commit.hash) ? (forks.has(commit.hash) ? 'Merge / Fork' : 'Merge') : 'Fork'}
+                </span>
+              )}
               <Tip label={<CommitDetails commit={commit} labels={labels} />}>
                 <button
                   aria-label={`${commit.subject || 'Untitled commit'} (${commit.hash.slice(0, 8)})`}

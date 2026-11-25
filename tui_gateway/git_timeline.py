@@ -51,7 +51,10 @@ def history(path: str, limit: int) -> dict:
     main_ref = next((name for name in preferred if name in names), None)
 
     limit = max(1, min(limit, 1000))
-    output = _git(path, "log", "--date-order", "--branches", "--remotes", "HEAD", f"--max-count={limit + 1}",
+    # Unrelated remote tracking branches can exhaust the display limit before
+    # the local branch base appears. Include remote ref labels on visible commits.
+    revisions = ["HEAD", "--branches", *([main_ref] if main_ref else [])]
+    output = _git(path, "log", "--date-order", *revisions, f"--max-count={limit + 1}",
                   "--no-show-signature", "--no-notes", "--no-decorate", "-z", "--format=%H%x00%P%x00%an%x00%aI%x00%s%x00%b")
     if not output:
         raise ValueError("Git could not read this repository's history.")
