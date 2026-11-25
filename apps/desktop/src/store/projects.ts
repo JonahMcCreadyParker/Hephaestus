@@ -413,6 +413,15 @@ async function activeProjectsContext(profile = projectProfile()): Promise<Active
   return { connectionId, gateway, profile, stampLocal }
 }
 
+export async function requestProjectGit<T>(
+  method: 'projects.git_repositories' | 'projects.git_history',
+  params: Record<string, unknown>
+): Promise<T> {
+  const context = await activeProjectsContext()
+
+  return gatewayRequestOn<T>(context.gateway, method, projectParams(params, context.profile))
+}
+
 function applyPayload(payload: ProjectsPayload): void {
   $projects.set(payload.projects ?? [])
   $activeProjectId.set(payload.active_id ?? null)

@@ -89,6 +89,18 @@ def _(rid, params, pdb, conn) -> dict:
     return _ok(rid, {"project": _require_project(pdb, conn, params).to_dict()})
 
 
+@_projects_method("projects.git_repositories")
+def _(rid, params, pdb, conn) -> dict:
+    from tui_gateway.git_timeline import repositories
+    return _ok(rid, {"paths": repositories(params["paths"])})
+
+
+@_projects_method("projects.git_history")
+def _(rid, params, pdb, conn) -> dict:
+    from tui_gateway.git_timeline import history
+    return _ok(rid, history(params["path"], params.get("limit", 250)))
+
+
 @_projects_method("projects.create")
 def _(rid, params, pdb, conn) -> dict:
     pid = pdb.create_project(

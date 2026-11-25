@@ -31,6 +31,7 @@ import { HashRouter } from 'react-router'
 
 import App from './app'
 import { registerInstalledCapabilities } from './app/capabilities/installed'
+import { registerGitTimeline } from './app/git-timeline'
 import { registerPromptTemplates } from './app/prompt-templates'
 import { RootErrorBoundary } from './components/error-boundary'
 import { HapticsProvider } from './components/haptics-provider'
@@ -46,6 +47,7 @@ import { installBrowserTabTitle } from './store/browser-tab-title'
 import { ThemeProvider } from './themes/context'
 
 registerPromptTemplates()
+registerGitTimeline()
 registerInstalledCapabilities()
 installClipboardShim()
 // Chromium serializes selection copies (Cmd+C, right-click Copy) with the

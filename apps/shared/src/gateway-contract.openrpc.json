@@ -2869,6 +2869,42 @@
       }
     },
     {
+      "name": "projects.git_history",
+      "summary": "Read a bounded commit graph from a Git checkout on the Hermes host.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/GitHistoryParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/GitHistoryResult"
+        }
+      }
+    },
+    {
+      "name": "projects.git_repositories",
+      "summary": "Filter project paths to available Git checkouts on the Hermes host.",
+      "params": [
+        {
+          "name": "params",
+          "schema": {
+            "$ref": "#/components/schemas/GitRepositoriesParams"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/GitRepositoriesResult"
+        }
+      }
+    },
+    {
       "name": "projects.list",
       "summary": "Every project of the profile (archived included) plus which one is active.",
       "params": [
@@ -19487,6 +19523,189 @@
           "replay_epoch"
         ],
         "title": "GatewayReadyPayload",
+        "type": "object"
+      },
+      "GitCommit": {
+        "additionalProperties": false,
+        "properties": {
+          "hash": {
+            "title": "Hash",
+            "type": "string"
+          },
+          "parents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Parents",
+            "type": "array"
+          },
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hash",
+          "parents",
+          "author",
+          "date",
+          "subject",
+          "message"
+        ],
+        "title": "GitCommit",
+        "type": "object"
+      },
+      "GitHistoryParams": {
+        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Profile"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "limit": {
+            "default": 250,
+            "maximum": 1000,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "GitHistoryParams",
+        "type": "object"
+      },
+      "GitHistoryResult": {
+        "additionalProperties": false,
+        "properties": {
+          "commits": {
+            "items": {
+              "$ref": "#/components/schemas/GitCommit"
+            },
+            "title": "Commits",
+            "type": "array"
+          },
+          "refs": {
+            "items": {
+              "$ref": "#/components/schemas/GitRef"
+            },
+            "title": "Refs",
+            "type": "array"
+          },
+          "main_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Main Ref"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "commits",
+          "refs",
+          "truncated"
+        ],
+        "title": "GitHistoryResult",
+        "type": "object"
+      },
+      "GitRef": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "hash": {
+            "title": "Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "hash"
+        ],
+        "title": "GitRef",
+        "type": "object"
+      },
+      "GitRepositoriesParams": {
+        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Profile"
+          },
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 150,
+            "title": "Paths",
+            "type": "array"
+          }
+        },
+        "required": [
+          "paths"
+        ],
+        "title": "GitRepositoriesParams",
+        "type": "object"
+      },
+      "GitRepositoriesResult": {
+        "additionalProperties": false,
+        "properties": {
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paths",
+            "type": "array"
+          }
+        },
+        "required": [
+          "paths"
+        ],
+        "title": "GitRepositoriesResult",
         "type": "object"
       },
       "GoalContractSnapshot": {

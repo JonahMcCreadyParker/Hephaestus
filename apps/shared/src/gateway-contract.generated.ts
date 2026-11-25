@@ -2554,6 +2554,36 @@ export interface SubagentTailResult {
   text?: string
   truncated?: boolean
 }
+export interface GitRepositoriesParams {
+  profile?: string | null
+  paths: string[]
+}
+export interface GitRepositoriesResult {
+  paths: string[]
+}
+export interface GitHistoryParams {
+  profile?: string | null
+  path: string
+  limit?: number
+}
+export interface GitHistoryResult {
+  commits: GitCommit[]
+  refs: GitRef[]
+  main_ref?: string | null
+  truncated: boolean
+}
+export interface GitCommit {
+  hash: string
+  parents: string[]
+  author: string
+  date: string
+  subject: string
+  message: string
+}
+export interface GitRef {
+  name: string
+  hash: string
+}
 /** ``methods_projects._projects_payload``: every project (archived included) + the active id. */
 export interface ProjectsPayload {
   projects: ProjectInfo[]
@@ -6713,6 +6743,10 @@ export interface RpcMethods {
   'projects.for_cwd': { params: ProjectsForCwdParams; result: ProjectsForCwdResult }
   /** One stored project with its folders. */
   'projects.get': { params: ProjectIdParams; result: ProjectResult }
+  /** Read a bounded commit graph from a Git checkout on the Hermes host. */
+  'projects.git_history': { params: GitHistoryParams; result: GitHistoryResult }
+  /** Filter project paths to available Git checkouts on the Hermes host. */
+  'projects.git_repositories': { params: GitRepositoriesParams; result: GitRepositoriesResult }
   /** Every project of the profile (archived included) plus which one is active. */
   'projects.list': { params: ProfileParams; result: ProjectsPayload }
   /** Fully hydrated lanes for one project, from the same grouping as projects.tree. */
@@ -7087,6 +7121,8 @@ export const RPC_METHODS = [
   'projects.discover_repos',
   'projects.for_cwd',
   'projects.get',
+  'projects.git_history',
+  'projects.git_repositories',
   'projects.list',
   'projects.project_sessions',
   'projects.record_repos',

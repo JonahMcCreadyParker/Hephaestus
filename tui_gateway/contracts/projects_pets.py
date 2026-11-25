@@ -30,6 +30,46 @@ class ProjectFolder(Result):
     enabled: bool = True
 
 
+class GitRepositoriesParams(ProfileParams):
+    paths: list[str] = Field(max_length=150)
+
+
+class GitRepositoriesResult(Result):
+    paths: list[str]
+
+
+class GitHistoryParams(ProfileParams):
+    path: str
+    limit: int = Field(default=250, ge=1, le=1000)
+
+
+class GitCommit(Result):
+    hash: str
+    parents: list[str]
+    author: str
+    date: str
+    subject: str
+    message: str
+
+
+class GitRef(Result):
+    name: str
+    hash: str
+
+
+class GitHistoryResult(Result):
+    commits: list[GitCommit]
+    refs: list[GitRef]
+    main_ref: str | None = None
+    truncated: bool
+
+
+method("projects.git_repositories", params=GitRepositoriesParams, result=GitRepositoriesResult,
+       doc="Filter project paths to available Git checkouts on the Hermes host.")
+method("projects.git_history", params=GitHistoryParams, result=GitHistoryResult,
+       doc="Read a bounded commit graph from a Git checkout on the Hermes host.")
+
+
 class ProjectInfo(Result):
     """``hermes_cli/projects_db.py::Project.to_dict`` — one stored project with its folders."""
 
