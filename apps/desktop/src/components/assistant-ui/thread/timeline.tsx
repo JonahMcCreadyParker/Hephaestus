@@ -4,6 +4,7 @@ import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'reac
 
 import { useSessionView } from '@/app/chat/session-view'
 import { usePaneVisible } from '@/components/pane-shell/pane-visibility'
+import { TIMELINE_MARKER_PITCH_REM } from '@/components/ui/proximity-sidebar'
 import { useI18n } from '@/i18n'
 import { triggerHaptic } from '@/lib/haptics'
 import { useStoreSelector } from '@/lib/use-session-slice'
@@ -318,7 +319,7 @@ const ActiveThreadTimeline: FC = () => {
         transform: 'translateY(-50%)',
         zIndex: 40,
         pointerEvents: 'auto',
-        height: `min(${railEntries.length * 0.4375}rem, 50%)`
+        height: `min(${railEntries.length * TIMELINE_MARKER_PITCH_REM}rem, 70%)`
       }}
     >
       <TimelineRail

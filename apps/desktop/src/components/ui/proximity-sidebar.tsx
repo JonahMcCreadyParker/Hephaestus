@@ -18,6 +18,7 @@ export function timelineBarWidth(index: number, activeIndex: number, hoverIndex:
 }
 
 const PULSE_MS = 160
+export const TIMELINE_MARKER_PITCH_REM = 0.625
 
 interface ProximitySidebarProps {
   activeIndex: number
@@ -37,7 +38,7 @@ export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: P
   const lastActive = useRef(activeIndex)
   const pulsing = useRef(false)
   const pendingFocus = useRef<number | null>(null)
-  const [pitch, setPitch] = useState(7)
+  const [pitch, setPitch] = useState(16 * TIMELINE_MARKER_PITCH_REM)
 
   const virtualizer = useVirtualizer({
     count: sections.length,
@@ -62,7 +63,7 @@ export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: P
       const rem = parseFloat(getComputedStyle(element.ownerDocument.documentElement).fontSize)
 
       if (Number.isFinite(rem) && rem > 0) {
-        setPitch(rem * 0.4375)
+        setPitch(rem * TIMELINE_MARKER_PITCH_REM)
       }
     }
 
@@ -84,7 +85,8 @@ export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: P
           ? 0.5
           : timelineBarWidth(Number(bar.dataset.index), activeIndex, hover.current)
 
-      const transform = `scaleX(${(0.25 + (width - 0.5) * 1.5).toFixed(4)})`
+      const emphasis = (width - 0.5) * 2
+      const transform = `scale(${(0.25 + emphasis * 0.875).toFixed(4)}, ${(1 + emphasis * 2.25).toFixed(4)})`
 
       if (bar.style.transform !== transform) {
         bar.style.transform = transform
