@@ -4,7 +4,6 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { Bookmark } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-
 export interface ProximitySection {
   id: string
   label: string
@@ -19,6 +18,7 @@ export function timelineBarWidth(index: number, activeIndex: number, hoverIndex:
 
 const PULSE_MS = 160
 export const TIMELINE_MARKER_PITCH_REM = 0.625
+export const TIMELINE_END_PADDING_REM = 0.5
 
 function markerOffset(index: number, hovered: number | null, pitch: number): number {
   const distance = hovered === null ? 0 : index - hovered
@@ -51,6 +51,7 @@ export function ProximitySidebar({
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [pitch, setPitch] = useState(16 * TIMELINE_MARKER_PITCH_REM)
+  const endPadding = pitch * (TIMELINE_END_PADDING_REM / TIMELINE_MARKER_PITCH_REM)
   const hovered = hoverIndex === null ? undefined : sections[hoverIndex]
 
   const virtualizer = useVirtualizer({
@@ -58,7 +59,11 @@ export function ProximitySidebar({
     estimateSize: () => pitch,
     getItemKey: index => sections[index].id,
     getScrollElement: () => root.current,
-    initialRect: { height: 300, width: 48 },
+    initialRect: { height: 300, width: 72 },
+    paddingEnd: endPadding,
+    paddingStart: endPadding,
+    scrollPaddingEnd: endPadding,
+    scrollPaddingStart: endPadding,
     overscan: 4
   })
 
@@ -113,7 +118,7 @@ export function ProximitySidebar({
       return
     }
 
-    const y = pointerY.current - scroller.getBoundingClientRect().top + scroller.scrollTop
+    const y = pointerY.current - scroller.getBoundingClientRect().top + scroller.scrollTop - endPadding
     const base = Math.max(0, Math.min(sections.length - 1, Math.floor(y / pitch)))
     setHoverIndex(current => {
       let nearest = base
@@ -139,7 +144,9 @@ export function ProximitySidebar({
         if (!event.currentTarget.contains(event.relatedTarget)) {
           focused.current = false
 
-          if (pointerY.current === null) {setHoverIndex(null)}
+          if (pointerY.current === null) {
+            setHoverIndex(null)
+          }
         }
       }}
       onKeyDown={event => {
@@ -192,8 +199,8 @@ export function ProximitySidebar({
 
             const offset = markerOffset(item.index, hoverIndex, pitch)
             const emphasis = hoverIndex === null ? 0 : (timelineBarWidth(item.index, hoverIndex, hoverIndex) - 0.5) * 2
-            const widthScale = 0.75 + emphasis * 0.375
-            const thickness = 1.5 + emphasis * 1.75
+            const widthScale = 0.75 + emphasis * 0.9375
+            const thickness = 1.5 + emphasis * 3.375
             const bookmarked = entry.bookmarkKey !== undefined && bookmarks.has(entry.bookmarkKey)
 
             return (
@@ -234,7 +241,7 @@ export function ProximitySidebar({
       {hovered && hoverIndex !== null && (
         <div
           className="thread-timeline-preview"
-          style={{ top: `clamp(2rem, ${(hoverIndex + 0.5) * pitch - scrollTop}px, calc(100% - 2rem))` }}
+          style={{ top: `clamp(2rem, ${endPadding + (hoverIndex + 0.5) * pitch - scrollTop}px, calc(100% - 2rem))` }}
         >
           <span className="line-clamp-3 break-words">{hovered.label}</span>
           {hovered.bookmarkKey && (

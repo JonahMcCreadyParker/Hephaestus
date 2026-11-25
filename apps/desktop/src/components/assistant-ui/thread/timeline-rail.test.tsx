@@ -4,12 +4,12 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { TimelineRail } from './timeline-rail'
 
 vi.mock('@tanstack/react-virtual', () => ({
-  useVirtualizer: () => ({
-    getTotalSize: () => 30,
+  useVirtualizer: ({ paddingStart, paddingEnd }: { paddingStart: number; paddingEnd: number }) => ({
+    getTotalSize: () => paddingStart + 30 + paddingEnd,
     getVirtualItems: () => [
-      { index: 0, start: 0 },
-      { index: 1, start: 10 },
-      { index: 2, start: 20 }
+      { index: 0, start: paddingStart },
+      { index: 1, start: paddingStart + 10 },
+      { index: 2, start: paddingStart + 20 }
     ],
     measure: vi.fn(),
     scrollToIndex: vi.fn()
@@ -32,6 +32,9 @@ it('fans out the nearby markers and restores a bookmark when the chat reopens', 
   fireEvent.focus(screen.getByRole('button', { name: 'Middle' }))
   expect(first.style.transform).toBe('translateY(-6.5px)')
   expect(last.style.transform).toBe('translateY(6.5px)')
+  expect(first.style.top).toBe('8px')
+  expect(last.style.top).toBe('28px')
+  expect(last.parentElement?.style.height).toBe('46px')
   fireEvent.click(screen.getByRole('button', { name: 'Bookmark prompt' }))
   expect(screen.getByRole('button', { name: 'Bookmark prompt' }).getAttribute('aria-pressed')).toBe('true')
 
@@ -43,7 +46,7 @@ it('fans out the nearby markers and restores a bookmark when the chat reopens', 
   expect(middle.querySelector<HTMLElement>('[data-slot="timeline-bar"]')?.style.transform).toBe('scale(0.75, 1.5)')
   expect(dot?.style.transform).toBe('translateX(0.5rem) scale(1.5)')
   fireEvent.focus(middle)
-  expect(dot?.style.transform).toBe('translateX(-0.25rem) scale(3.25)')
+  expect(dot?.style.transform).toBe('translateX(-1.375rem) scale(4.875)')
   const bookmark = screen.getByRole('button', { name: 'Bookmark prompt' })
 
   expect(bookmark.getAttribute('aria-pressed')).toBe('true')

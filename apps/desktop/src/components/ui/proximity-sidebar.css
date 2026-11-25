@@ -1,5 +1,5 @@
 [data-slot='thread']:has(> [data-slot='thread-timeline']) {
-  --thread-timeline-width: 3.5rem;
+  --thread-timeline-width: 4.5rem;
 }
 
 [data-slot='thread']:has(> [data-slot='thread-timeline']):not([data-hud-shell] *) [data-slot='aui_thread-viewport'] {
@@ -7,7 +7,7 @@
 }
 
 .thread-timeline-ticks {
-  width: var(--thread-timeline-width, 3.5rem);
+  width: var(--thread-timeline-width, 4.5rem);
   height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
