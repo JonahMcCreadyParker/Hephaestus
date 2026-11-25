@@ -412,6 +412,7 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
   setTitleBarTheme: payload => ipcRenderer.send('hermes:titlebar-theme', payload),
   setNativeTheme: mode => ipcRenderer.send('hermes:native-theme', mode),
   setTranslucency: payload => ipcRenderer.send('hermes:translucency', payload),
+  setOpaqueBackdrop: enabled => ipcRenderer.send('hermes:opaque-backdrop', enabled),
   setKeepAwake: mode => ipcRenderer.send('hermes:keep-awake', mode),
   // Once per computer, after a timed sleep interrupted a turn with keep-awake off.
   onKeepAwakeOffer: callback => {

@@ -226,6 +226,30 @@ describe('ThemeProvider highlight preview', () => {
     expect(cssVar('--theme-foreground')).not.toBe(everforestTheme.darkColors!.foreground)
   })
 
+  it.each([
+    ['amber-minimal', '#ffffff', '#171717'],
+    ['starry-night', '#f5f7fa', '#181a24'],
+    ['sage-mist', '#fdfdfd', '#070503'],
+    ['mint-signal', '#fdfdfd', '#000000'],
+    ['sage-garden', '#f8f7f4', '#0a0a0a'],
+    ['soft-pop', '#f7f9f3', '#000000'],
+    ['caffeine', '#f9f9f9', '#111111'],
+    ['chalk-slate', '#f3f7fc', '#141d2b']
+  ])('applies the %s palette and solid backdrop in both modes', (theme, light, dark) => {
+    renderProbe()
+
+    act(() => ctx.previewTheme(theme, 'light'))
+    expect(cssVar('--theme-background-seed')).toBe(light)
+    expect(window.document.documentElement.hasAttribute('data-hermes-opaque-backdrop')).toBe(true)
+
+    act(() => ctx.previewTheme(theme, 'dark'))
+    expect(cssVar('--theme-background-seed')).toBe(dark)
+    expect(window.document.documentElement.hasAttribute('data-hermes-opaque-backdrop')).toBe(true)
+
+    act(() => ctx.previewTheme('everforest', 'dark'))
+    expect(window.document.documentElement.hasAttribute('data-hermes-opaque-backdrop')).toBe(false)
+  })
+
   it('a commit replaces the preview and persists', () => {
     renderProbe()
 

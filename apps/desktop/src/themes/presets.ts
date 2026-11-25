@@ -20,6 +20,7 @@
 
 import { THEME_PRESET_PALETTES } from '@hermes/shared'
 
+import { SERAFIM_THEMES } from './serafim'
 import { skinToDesktopTheme } from './skin'
 import type { DesktopTheme, DesktopThemeTypography } from './types'
 
@@ -451,6 +452,7 @@ export const BUILTIN_THEMES: Record<string, DesktopTheme> = {
   classic: classicTheme,
   midnight: midnightTheme,
   ember: emberTheme,
+  ...SERAFIM_THEMES,
   mono: monoTheme,
   slate: slateTheme,
   cyberpunk: cyberpunkTheme

@@ -432,6 +432,7 @@ declare global {
        *  `/api/ui-preferences` on the Webapp. */
       uiPreferences?: UiPreferencesBridge
       setTranslucency?: (payload: TranslucencyState) => void
+      setOpaqueBackdrop?: (enabled: boolean) => void
       setKeepAwake?: (mode: KeepAwakeMode) => void
       onKeepAwakeOffer?: (callback: () => void) => () => void
       minimizeToTray?: {

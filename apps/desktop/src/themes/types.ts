@@ -97,6 +97,8 @@ export interface DesktopTheme {
   name: string
   label: string
   description: string
+  /** Paint a solid backdrop in chat windows while preserving overlay styling. */
+  opaqueBackdrop?: boolean
   /** Light palette (also reused for dark when `darkColors` is omitted). */
   colors: DesktopThemeColors
   /** Hand-tuned dark palette. Skins like `nous` ship one. */

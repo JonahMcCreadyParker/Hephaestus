@@ -674,6 +674,11 @@
     background: color-mix(in srgb, var(--ui-bg-chrome) var(--translucency-glass-keep, 100%), transparent);
   }
 
+  /* Let the existing translucent controls composite over the theme, rather than the desktop. */
+  :root[data-hermes-opaque-backdrop] {
+    background-color: var(--theme-background-seed) !important;
+  }
+
   /* Sidebar scope (the Finder shape): glass rail, opaque content column.
      <body> stays the one painter but splits at the rail's visual edge — the
      store publishes it as --glass-rail-edge (live-tracked through collapse

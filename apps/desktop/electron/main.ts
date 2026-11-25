@@ -1504,13 +1504,14 @@ let translucencyState = readPersistedTranslucency()
 // wake indicator are `transparent: true` windows that own their backgrounds —
 // painting a themed backing onto them would turn them into opaque rectangles.
 const translucencyBackedWindows = new WeakSet()
+const opaqueBackdropWindows = new WeakSet()
 
 // Set a live window's native opacity, but only when the state asks it to fade
 // — or when the window is already faded and is on its way back to opaque. The
 // window's own opacity is the record of whether that door was ever opened; see
 // opacityNeedsSetting for why it matters that it stays shut.
 function applyWindowOpacity(win) {
-  const opacity = nativeOpacityFor(translucencyState, TRANSLUCENCY_SUPPORTED)
+  const opacity = opaqueBackdropWindows.has(win) ? 1 : nativeOpacityFor(translucencyState, TRANSLUCENCY_SUPPORTED)
 
   if (typeof win.setOpacity === 'function' && opacityNeedsSetting(opacity, win.getOpacity?.() ?? 1)) {
     win.setOpacity(opacity)
@@ -16273,6 +16274,22 @@ ipcMain.on('hermes:feature-flags', (event: IpcMainEvent): void => {
     // install. Packaged builds never honour it.
     assumeFreshInstall: !app.isPackaged && process.argv.includes('--fresh-install')
   }
+})
+
+ipcMain.on('hermes:opaque-backdrop', (event, enabled) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+
+  if (!win || !translucencyBackedWindows.has(win) || typeof enabled !== 'boolean') {
+    return
+  }
+
+  if (enabled) {
+    opaqueBackdropWindows.add(win)
+  } else {
+    opaqueBackdropWindows.delete(win)
+  }
+
+  applyWindowOpacity(win)
 })
 
 ipcMain.on('hermes:translucency', (_event, payload) => {

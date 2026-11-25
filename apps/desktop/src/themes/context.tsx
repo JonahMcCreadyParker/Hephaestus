@@ -19,7 +19,7 @@ import { persistString, persistStringRecord, storedString, storedStringRecord } 
 import { recordFeatureUse } from '@/store/desktop-metrics'
 import { $activeGatewayProfile, normalizeProfileKey } from '@/store/profile'
 import { $connection } from '@/store/session'
-import { setAppearance } from '@/store/translucency'
+import { isChatWindow, setAppearance } from '@/store/translucency'
 
 import { $accentOverride } from './accent-override'
 import {
@@ -329,6 +329,10 @@ function applyTheme(theme: DesktopTheme, mode: 'light' | 'dark', chatFontFamily 
   root.dataset.hermesTheme = skinName
   root.dataset.hermesMode = rendered
   root.classList.toggle('dark', isDark)
+  const opaqueBackdrop = theme.opaqueBackdrop === true && isChatWindow()
+
+  root.toggleAttribute('data-hermes-opaque-backdrop', opaqueBackdrop)
+  window.hermesDesktop?.setOpaqueBackdrop?.(opaqueBackdrop)
 
   // Translucency is tuned per appearance, and "appearance" means the palette
   // actually painted — a skin that keeps a bright surface in "dark" wants
