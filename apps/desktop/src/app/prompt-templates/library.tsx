@@ -80,61 +80,74 @@ export function TemplateLibrary({ onChoose }: { onChoose?: (template: PromptTemp
               </Button>
             </h2>
             <div hidden={collapsed.has(group.category)}>
-              {group.templates.map(template => (
-                <div className="flex flex-wrap items-center gap-2 py-3" key={template.id}>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium">{template.title}</h3>
-                    <p className="line-clamp-2 whitespace-pre-wrap text-sm text-muted-foreground">{template.body}</p>
-                  </div>
-                  {onChoose && (
-                    <Button onClick={() => onChoose(template)} variant="secondary">
-                      Use template
-                    </Button>
-                  )}
-                  <Button
-                    aria-label={`${template.favorite ? 'Unfavorite' : 'Favorite'} ${template.title}`}
-                    onClick={() => savePromptTemplate({ ...template, favorite: !template.favorite })}
-                    variant="ghost"
-                  >
-                    {template.favorite ? '★' : '☆'}
-                  </Button>
-                  <Button onClick={() => setEditing(template)} variant="ghost">
-                    Edit
-                  </Button>
-                  <Button
-                    onClick={() => setEditing({ ...template, id: randomUuid(), title: `${template.title} (copy)` })}
-                    variant="ghost"
-                  >
-                    Duplicate
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      if (deleting !== template.id) {
-                        setDeleting(template.id)
+              <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-3 pt-2">
+                {group.templates
+                  .toSorted((left, right) => left.title.localeCompare(right.title))
+                  .map(template => (
+                    <li
+                      className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-muted/20 p-3"
+                      key={template.id}
+                    >
+                      <div className="flex-1">
+                        <h3 className="break-words font-medium">{template.title}</h3>
+                        <p className="line-clamp-2 whitespace-pre-wrap text-sm text-muted-foreground">
+                          {template.body}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1">
+                        {onChoose && (
+                          <Button onClick={() => onChoose(template)} variant="secondary">
+                            Use template
+                          </Button>
+                        )}
+                        <Button
+                          aria-label={`${template.favorite ? 'Unfavorite' : 'Favorite'} ${template.title}`}
+                          onClick={() => savePromptTemplate({ ...template, favorite: !template.favorite })}
+                          variant="ghost"
+                        >
+                          {template.favorite ? '★' : '☆'}
+                        </Button>
+                        <Button onClick={() => setEditing(template)} variant="ghost">
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() =>
+                            setEditing({ ...template, id: randomUuid(), title: `${template.title} (copy)` })
+                          }
+                          variant="ghost"
+                        >
+                          Duplicate
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            if (deleting !== template.id) {
+                              setDeleting(template.id)
 
-                        return
-                      }
+                              return
+                            }
 
-                      if (
-                        savePromptLibrary({
-                          ...library,
-                          templates: library.templates.filter(row => row.id !== template.id)
-                        })
-                      ) {
-                        setDeleting('')
-                      }
-                    }}
-                    variant="ghost"
-                  >
-                    {deleting === template.id ? 'Confirm delete' : 'Delete'}
-                  </Button>
-                  {deleting === template.id && (
-                    <Button onClick={() => setDeleting('')} variant="ghost">
-                      Cancel
-                    </Button>
-                  )}
-                </div>
-              ))}
+                            if (
+                              savePromptLibrary({
+                                ...library,
+                                templates: library.templates.filter(row => row.id !== template.id)
+                              })
+                            ) {
+                              setDeleting('')
+                            }
+                          }}
+                          variant="ghost"
+                        >
+                          {deleting === template.id ? 'Confirm delete' : 'Delete'}
+                        </Button>
+                        {deleting === template.id && (
+                          <Button onClick={() => setDeleting('')} variant="ghost">
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+              </ul>
             </div>
           </section>
         ))}
