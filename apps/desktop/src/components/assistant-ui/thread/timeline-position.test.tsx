@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ChatMessage } from '@/lib/chat-messages'
 
-const view = { $messages: atom<ChatMessage[]>([]) }
+const view = { $messages: atom<ChatMessage[]>([]), $storedId: atom('timeline-session') }
 let visible = true
 
 vi.mock('@/app/chat/session-view', () => ({ useSessionView: () => view }))

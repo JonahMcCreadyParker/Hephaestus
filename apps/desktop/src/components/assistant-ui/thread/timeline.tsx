@@ -41,6 +41,7 @@ export const ThreadTimeline: FC = () => {
 
 const ActiveThreadTimeline: FC = () => {
   const view = useSessionView()
+  const storedId = useStore(view.$storedId)
   const { t } = useI18n()
   const history = useTranscriptWindow()
   const historyIndex = useTimelineHistory()
@@ -325,8 +326,10 @@ const ActiveThreadTimeline: FC = () => {
       <TimelineRail
         activeIndex={activeIndex}
         entries={railEntries}
+        key={storedId ?? 'draft'}
         loadingId={loadingId}
         onJump={id => void jump(id)}
+        sessionId={storedId ?? null}
       />
     </div>
   )

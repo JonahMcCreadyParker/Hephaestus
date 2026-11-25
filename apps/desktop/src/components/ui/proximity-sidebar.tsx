@@ -1,14 +1,14 @@
 import './proximity-sidebar.css'
 
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useReducedMotion } from 'motion/react'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Bookmark } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import { Tip } from '@/components/ui/tooltip'
 
 export interface ProximitySection {
   id: string
   label: string
+  bookmarkKey?: string
 }
 
 export function timelineBarWidth(index: number, activeIndex: number, hoverIndex: number | null): number {
@@ -20,25 +20,38 @@ export function timelineBarWidth(index: number, activeIndex: number, hoverIndex:
 const PULSE_MS = 160
 export const TIMELINE_MARKER_PITCH_REM = 0.625
 
+function markerOffset(index: number, hovered: number | null, pitch: number): number {
+  const distance = hovered === null ? 0 : index - hovered
+
+  return Math.sign(distance) * pitch * 0.65 * Math.max(0, 1 - (Math.abs(distance) - 1) / 6)
+}
+
 interface ProximitySidebarProps {
   activeIndex: number
   loadingId: string | null
   onJump: (id: string) => void
   sections: readonly ProximitySection[]
+  bookmarks: ReadonlySet<string>
+  onBookmark: (key: string) => void
 }
 
 /** Only the visible slice owns DOM or tooltip instances. Pointer paint is local. */
-export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: ProximitySidebarProps) {
-  const reducedMotion = useReducedMotion()
+export function ProximitySidebar({
+  activeIndex,
+  loadingId,
+  onJump,
+  sections,
+  bookmarks,
+  onBookmark
+}: ProximitySidebarProps) {
   const root = useRef<HTMLDivElement>(null)
-  const hover = useRef<number | null>(null)
   const pointerY = useRef<number | null>(null)
-  const frame = useRef(0)
   const focused = useRef(false)
-  const lastActive = useRef(activeIndex)
-  const pulsing = useRef(false)
   const pendingFocus = useRef<number | null>(null)
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const [scrollTop, setScrollTop] = useState(0)
   const [pitch, setPitch] = useState(16 * TIMELINE_MARKER_PITCH_REM)
+  const hovered = hoverIndex === null ? undefined : sections[hoverIndex]
 
   const virtualizer = useVirtualizer({
     count: sections.length,
@@ -76,33 +89,7 @@ export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: P
 
   useEffect(() => virtualizer.measure(), [pitch, virtualizer])
 
-  const paint = useCallback(() => {
-    frame.current = 0
-
-    for (const bar of root.current?.querySelectorAll<HTMLElement>('[data-slot="timeline-bar"]') ?? []) {
-      const width =
-        hover.current === null && !pulsing.current
-          ? 0.5
-          : timelineBarWidth(Number(bar.dataset.index), activeIndex, hover.current)
-
-      const emphasis = (width - 0.5) * 2
-      const transform = `scale(${(0.25 + emphasis * 0.875).toFixed(4)}, ${(1 + emphasis * 2.25).toFixed(4)})`
-
-      if (bar.style.transform !== transform) {
-        bar.style.transform = transform
-      }
-    }
-  }, [activeIndex])
-
-  const schedule = useCallback(() => {
-    if (!frame.current) {
-      frame.current = requestAnimationFrame(paint)
-    }
-  }, [paint])
-
   useLayoutEffect(() => {
-    paint()
-
     if (pendingFocus.current !== null) {
       const button = root.current?.querySelector<HTMLButtonElement>(`[data-timeline-index="${pendingFocus.current}"]`)
 
@@ -111,46 +98,15 @@ export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: P
         pendingFocus.current = null
       }
     }
-
-    return () => {
-      cancelAnimationFrame(frame.current)
-      frame.current = 0
-    }
-  }, [paint, visibleKey])
+  }, [visibleKey])
 
   useEffect(() => {
-    if (hover.current === null && !focused.current) {
+    if (pointerY.current === null && !focused.current) {
       virtualizer.scrollToIndex(activeIndex, { align: 'auto' })
     }
   }, [activeIndex, virtualizer])
 
-  // eslint-disable-next-line no-restricted-syntax -- Records the last pulse target to skip the initial paint.
-  useEffect(() => {
-    if (lastActive.current === activeIndex) {
-      return
-    }
-
-    lastActive.current = activeIndex
-
-    if (reducedMotion) {
-      return
-    }
-
-    pulsing.current = hover.current === null
-    schedule()
-
-    const reset = setTimeout(() => {
-      pulsing.current = false
-      schedule()
-    }, PULSE_MS)
-
-    return () => {
-      clearTimeout(reset)
-      pulsing.current = false
-    }
-  }, [activeIndex, reducedMotion, schedule])
-
-  const updatePointer = useCallback(() => {
+  const updatePointer = () => {
     const scroller = root.current
 
     if (!scroller || pointerY.current === null) {
@@ -158,19 +114,32 @@ export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: P
     }
 
     const y = pointerY.current - scroller.getBoundingClientRect().top + scroller.scrollTop
-    hover.current = Math.max(0, Math.min(sections.length - 1, y / pitch - 0.5))
-    schedule()
-  }, [sections.length, pitch, schedule])
+    const base = Math.max(0, Math.min(sections.length - 1, Math.floor(y / pitch)))
+    setHoverIndex(current => {
+      let nearest = base
+      let best = Infinity
+
+      for (let index = Math.max(0, base - 1); index <= Math.min(sections.length - 1, base + 1); index++) {
+        const distance = Math.abs((index + 0.5) * pitch + markerOffset(index, current, pitch) - y)
+
+        if (distance < best) {
+          nearest = index
+          best = distance
+        }
+      }
+
+      return nearest
+    })
+  }
 
   return (
     <div
-      className="thread-timeline-ticks"
-      data-slot="thread-timeline-ticks"
+      className="relative h-full"
       onBlur={event => {
         if (!event.currentTarget.contains(event.relatedTarget)) {
           focused.current = false
-          hover.current = null
-          schedule()
+
+          if (pointerY.current === null) {setHoverIndex(null)}
         }
       }}
       onKeyDown={event => {
@@ -179,6 +148,14 @@ export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: P
         )
 
         const next = { ArrowUp: index - 1, ArrowDown: index + 1, Home: 0, End: sections.length - 1 }[event.key]
+        const bookmarkKey = sections[index]?.bookmarkKey
+
+        if (event.key.toLowerCase() === 'b' && bookmarkKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+          event.preventDefault()
+          onBookmark(bookmarkKey)
+
+          return
+        }
 
         if (next === undefined || !Number.isFinite(next)) {
           return
@@ -193,50 +170,86 @@ export function ProximitySidebar({ activeIndex, loadingId, onJump, sections }: P
       }}
       onPointerLeave={() => {
         pointerY.current = null
-        hover.current = null
-        schedule()
+        setHoverIndex(null)
       }}
-      onPointerMove={event => {
-        pointerY.current = event.clientY
-        updatePointer()
-      }}
-      onScroll={updatePointer}
-      ref={root}
     >
-      <div className="thread-timeline-track" style={{ height: virtualizer.getTotalSize() }}>
-        {items.map(item => {
-          const entry = sections[item.index]
+      <div
+        className="thread-timeline-ticks"
+        data-slot="thread-timeline-ticks"
+        onPointerMove={event => {
+          pointerY.current = event.clientY
+          updatePointer()
+        }}
+        onScroll={event => {
+          setScrollTop(event.currentTarget.scrollTop)
+          updatePointer()
+        }}
+        ref={root}
+      >
+        <div className="thread-timeline-track" style={{ height: virtualizer.getTotalSize() }}>
+          {items.map(item => {
+            const entry = sections[item.index]
 
-          return (
-            <Tip
-              key={entry.id}
-              label={entry.label}
-              placement="right-rail"
-              sideOffset={8}
-              style={{ textAlign: 'right' }}
-            >
+            const offset = markerOffset(item.index, hoverIndex, pitch)
+            const emphasis = hoverIndex === null ? 0 : (timelineBarWidth(item.index, hoverIndex, hoverIndex) - 0.5) * 2
+            const widthScale = 0.75 + emphasis * 0.375
+            const thickness = 1.5 + emphasis * 1.75
+            const bookmarked = entry.bookmarkKey !== undefined && bookmarks.has(entry.bookmarkKey)
+
+            return (
               <button
                 aria-busy={loadingId === entry.id || undefined}
                 aria-current={item.index === activeIndex ? 'location' : undefined}
+                aria-keyshortcuts={entry.bookmarkKey ? 'B' : undefined}
                 aria-label={entry.label}
                 className="thread-timeline-tick"
                 data-timeline-id={entry.id}
                 data-timeline-index={item.index}
+                key={entry.id}
                 onClick={() => onJump(entry.id)}
                 onFocus={() => {
                   focused.current = true
-                  hover.current = item.index
-                  schedule()
+                  setHoverIndex(item.index)
                 }}
-                style={{ top: item.start, height: pitch }}
+                style={{ top: item.start, height: pitch, transform: `translateY(${offset}px)` }}
                 type="button"
               >
-                <span aria-hidden data-index={item.index} data-slot="timeline-bar" />
+                {bookmarked && (
+                  <span
+                    aria-hidden
+                    className="thread-timeline-bookmark-dot"
+                    style={{ transform: `translateX(${(1 - widthScale) * 2}rem) scale(${thickness})` }}
+                  />
+                )}
+                <span
+                  aria-hidden
+                  data-slot="timeline-bar"
+                  style={{ transform: `scale(${widthScale}, ${thickness})` }}
+                />
               </button>
-            </Tip>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
+      {hovered && hoverIndex !== null && (
+        <div
+          className="thread-timeline-preview"
+          style={{ top: `clamp(2rem, ${(hoverIndex + 0.5) * pitch - scrollTop}px, calc(100% - 2rem))` }}
+        >
+          <span className="line-clamp-3 break-words">{hovered.label}</span>
+          {hovered.bookmarkKey && (
+            <button
+              aria-label="Bookmark prompt"
+              aria-pressed={bookmarks.has(hovered.bookmarkKey)}
+              className="shrink-0 rounded p-1 text-(--theme-primary) hover:bg-muted focus-visible:outline"
+              onClick={() => onBookmark(hovered.bookmarkKey!)}
+              type="button"
+            >
+              <Bookmark fill={bookmarks.has(hovered.bookmarkKey) ? 'currentColor' : 'none'} size={16} />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

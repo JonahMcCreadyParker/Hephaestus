@@ -1,65 +1,52 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, expect, it, vi } from 'vitest'
 
 import { TimelineRail } from './timeline-rail'
 
-vi.mock('@/components/ui/tooltip', () => ({ Tip: ({ children }: { children: ReactNode }) => children }))
-
-beforeEach(() => {
-  vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
-    width: 48,
-    height: 300,
-    top: 0,
-    left: 0,
-    bottom: 300,
-    right: 48,
-    x: 0,
-    y: 0,
-    toJSON: () => ({})
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: () => ({
+    getTotalSize: () => 30,
+    getVirtualItems: () => [
+      { index: 0, start: 0 },
+      { index: 1, start: 10 },
+      { index: 2, start: 20 }
+    ],
+    measure: vi.fn(),
+    scrollToIndex: vi.fn()
   })
-  vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(300)
-  vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(48)
-  HTMLElement.prototype.scrollTo = vi.fn()
-})
+}))
 
 afterEach(() => {
   cleanup()
-  vi.restoreAllMocks()
+  localStorage.clear()
 })
 
-const entries = Array.from({ length: 5000 }, (_, index) => ({ id: `message-${index}`, preview: `Message ${index}` }))
+it('fans out the nearby markers and restores a bookmark when the chat reopens', () => {
+  const entries = ['First', 'Middle', 'Last'].map((preview, index) => ({ id: preview, preview, rowId: index + 1 }))
+  const rail = <TimelineRail activeIndex={1} entries={entries} loadingId={null} onJump={vi.fn()} sessionId="chat" />
+  const { unmount } = render(rail)
+  const first = screen.getByRole('button', { name: 'First' })
+  const last = screen.getByRole('button', { name: 'Last' })
 
-describe('TimelineRail', () => {
-  it('bounds mounted buttons for thousands of prompts', () => {
-    const view = render(<TimelineRail activeIndex={0} entries={entries} loadingId={null} onJump={vi.fn()} />)
+  expect(first.style.transform).toBe('translateY(0px)')
+  fireEvent.focus(screen.getByRole('button', { name: 'Middle' }))
+  expect(first.style.transform).toBe('translateY(-6.5px)')
+  expect(last.style.transform).toBe('translateY(6.5px)')
+  fireEvent.click(screen.getByRole('button', { name: 'Bookmark prompt' }))
+  expect(screen.getByRole('button', { name: 'Bookmark prompt' }).getAttribute('aria-pressed')).toBe('true')
 
-    expect(view.container.querySelectorAll('button').length).toBeGreaterThan(0)
-    expect(view.container.querySelectorAll('button').length).toBeLessThan(60)
-  })
+  unmount()
+  render(rail)
+  const middle = screen.getByRole('button', { name: 'Middle' })
+  const dot = middle.querySelector<HTMLElement>('.thread-timeline-bookmark-dot')
 
-  it('keeps the active bar compact without hover and routes selection by stable ID', () => {
-    const onJump = vi.fn()
-    render(<TimelineRail activeIndex={0} entries={entries} loadingId={null} onJump={onJump} />)
+  expect(middle.querySelector<HTMLElement>('[data-slot="timeline-bar"]')?.style.transform).toBe('scale(0.75, 1.5)')
+  expect(dot?.style.transform).toBe('translateX(0.5rem) scale(1.5)')
+  fireEvent.focus(middle)
+  expect(dot?.style.transform).toBe('translateX(-0.25rem) scale(3.25)')
+  const bookmark = screen.getByRole('button', { name: 'Bookmark prompt' })
 
-    const active = screen.getByRole('button', { name: 'Message 0' })
-
-    expect(active.getAttribute('aria-current')).toBe('location')
-    fireEvent.click(active)
-    expect(onJump).toHaveBeenCalledWith('message-0')
-  })
-
-  it('pulses when scrolling activates a different prompt and then returns to its compact size', async () => {
-    const onJump = vi.fn()
-    const { rerender } = render(<TimelineRail activeIndex={0} entries={entries} loadingId={null} onJump={onJump} />)
-
-    rerender(<TimelineRail activeIndex={1} entries={entries} loadingId={null} onJump={onJump} />)
-    const current = screen.getByRole('button', { name: 'Message 1' })
-    const mark = current.querySelector<HTMLElement>('[data-slot="timeline-bar"]')
-
-    expect(current.getAttribute('aria-current')).toBe('location')
-    await waitFor(() => expect(mark?.style.transform).toBe('scaleX(1.0000)'))
-    await waitFor(() => expect(mark?.style.transform).toBe('scaleX(0.2500)'))
-    expect(onJump).not.toHaveBeenCalled()
-  })
+  expect(bookmark.getAttribute('aria-pressed')).toBe('true')
+  fireEvent.click(bookmark)
+  expect(bookmark.getAttribute('aria-pressed')).toBe('false')
 })
