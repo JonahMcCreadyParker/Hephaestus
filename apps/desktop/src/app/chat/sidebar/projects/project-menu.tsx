@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/actions-menu'
 import { Codicon } from '@/components/ui/codicon'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ import { cn } from '@/lib/utils'
 import { $panesFlipped, dismissAutoProject, restoreAutoProject } from '@/store/layout'
 import { notify } from '@/store/notifications'
 import {
+  $projects,
   copyPath,
   deleteProject,
   openProjectAddFolder,
@@ -191,6 +193,10 @@ export function ProjectMenu({
   const { t } = useI18n()
   const p = t.sidebar.projects
   const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const [foldersOpen, setFoldersOpen] = useState(false)
+  const savedProject = useStore($projects).find(item => item.id === project.id)
+  const folders = savedProject?.folders ?? (project.path ? [{ path: project.path, label: null, is_primary: true }] : [])
+  const canReveal = project.connectionId ? project.connectionId === LOCAL_CONNECTION_ID : !isDesktopFsRemoteMode()
   // Open toward the content area: right when the sidebar is on the left, left
   // when the panes are flipped (sidebar on the right).
   const panesFlipped = useStore($panesFlipped)
@@ -278,6 +284,12 @@ export function ProjectMenu({
               <DropdownMenuSeparator />
             </>
           )}
+          {folders.length > 0 && (
+            <DropdownMenuItem onSelect={() => setFoldersOpen(true)}>
+              <Codicon name="folder-library" size="0.875rem" />
+              <span>{p.foldersLabel}…</span>
+            </DropdownMenuItem>
+          )}
           {pathItems.map(item => renderActionItem(DROPDOWN_KIT, item))}
           <DropdownMenuSeparator />
           {renderActionItem(DROPDOWN_KIT, dangerItem)}
@@ -298,6 +310,36 @@ export function ProjectMenu({
           onIcon={icon => void applyAppearance({ icon })}
         />
       </PopoverContent>
+      <Dialog onOpenChange={setFoldersOpen} open={foldersOpen}>
+        <DialogContent aria-describedby={undefined} onClick={event => event.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>
+              {project.label} · {p.foldersLabel}
+            </DialogTitle>
+          </DialogHeader>
+          <ul className="max-h-[50vh] space-y-3 overflow-y-auto">
+            {folders.map(folder => (
+              <li className="space-y-1 rounded-md border border-border p-2" key={folder.path}>
+                <div className="text-sm font-medium">
+                  {folder.label || folder.path.split(/[\\/]/).filter(Boolean).at(-1) || folder.path}
+                  {folder.is_primary && <span className="ml-2 text-xs text-muted-foreground">{p.primaryBadge}</span>}
+                </div>
+                <div className="select-text break-all text-xs text-muted-foreground">{folder.path}</div>
+                <div className="flex gap-3 text-xs">
+                  {canReveal && (
+                    <button className="hover:underline" onClick={() => void revealPath(folder.path)} type="button">
+                      {p.reveal}
+                    </button>
+                  )}
+                  <button className="hover:underline" onClick={() => void copyPath(folder.path)} type="button">
+                    {p.copyPath}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
       {confirmDialog}
     </Popover>
   )

@@ -35,6 +35,7 @@ vi.mock('@/i18n', () => ({
         projects: {
           copyPath: 'Copy path',
           deleteConfirm: 'This cannot be undone.',
+          foldersLabel: 'Folders',
           menu: 'Actions',
           menuAddFolder: 'Add folder',
           menuAppearance: 'Appearance',
@@ -42,6 +43,7 @@ vi.mock('@/i18n', () => ({
           menuRename: 'Rename',
           menuSetActive: 'Set active',
           noColor: 'No color',
+          primaryBadge: 'primary',
           hiddenFromSidebar: 'Hidden from sidebar',
           removeFromSidebar: 'Remove from sidebar',
           reveal: 'Reveal in file manager',
@@ -70,7 +72,16 @@ vi.mock('@/store/notifications', () => ({
   notify: vi.fn()
 }))
 
-vi.mock('@/store/projects', () => ({
+vi.mock('@/store/projects', async () => ({
+  $projects: (await import('nanostores')).atom([
+    {
+      id: 'p1',
+      folders: [
+        { path: '/repo', is_primary: true },
+        { path: '/docs', label: 'Documents' }
+      ]
+    }
+  ]),
   copyPath: vi.fn(),
   deleteProject: vi.fn(),
   openProjectAddFolder: vi.fn(),
@@ -108,6 +119,17 @@ const openTriggerMenu = (trigger: HTMLElement) => {
 }
 
 describe('ProjectMenu', () => {
+  it('shows linked folder paths and the primary folder from the actions menu', async () => {
+    render(<ProjectMenu isActive={false} project={project} />)
+    openTriggerMenu(screen.getByRole('button', { name: 'Actions' }))
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Folders…' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Test D · Folders' })).toBeTruthy()
+    expect(screen.getByText('/repo')).toBeTruthy()
+    expect(screen.getByText('/docs')).toBeTruthy()
+    expect(screen.getByText('primary')).toBeTruthy()
+  })
+
   // When anchorRef is absent, PopoverAnchor wraps the dropdown trigger so the
   // appearance popover positions against the kebab. asChild must still reach
   // the real button (no non-forwarding wrappers inside the chain — #67500).

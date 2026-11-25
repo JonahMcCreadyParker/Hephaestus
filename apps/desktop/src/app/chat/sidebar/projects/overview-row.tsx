@@ -192,15 +192,10 @@ export function ProjectOverviewRow({
 
   const labelLink = (
     <SidebarRowLink
-      // The glyph is aria-hidden and the tooltip only speaks on hover, so the
-      // link's own name carries the auto cue — screen readers get it too.
-      aria-label={
-        project.isAuto
-          ? `${s.projects.enter(project.label)} (${s.projects.autoDiscovered})`
-          : s.projects.enter(project.label)
-      }
-      labelClassName={cn('hover:text-foreground hover:underline', isActive && 'text-foreground')}
-      onClick={() => onEnter?.(project.id)}
+      aria-expanded={open}
+      className="flex-1"
+      labelClassName={cn('hover:text-foreground', isActive && 'text-foreground')}
+      onClick={toggleOpen}
     >
       {project.label}
     </SidebarRowLink>

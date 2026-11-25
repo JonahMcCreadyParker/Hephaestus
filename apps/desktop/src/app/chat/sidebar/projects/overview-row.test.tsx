@@ -12,6 +12,7 @@ import type { SidebarProjectTree } from './workspace-groups'
 afterEach(cleanup)
 
 const workspaceOpen = vi.hoisted(() => ({ value: false }))
+const toggleWorkspace = vi.hoisted(() => vi.fn())
 
 const projectsStore = vi.hoisted(() => ({
   fetchProjectSessions:
@@ -47,7 +48,7 @@ vi.mock('@/store/projects', async importOriginal => ({
 vi.mock('./model', async () => ({
   ...(await vi.importActual<typeof Model>('./model')),
   latestProjectSessions: () => [],
-  useWorkspaceNodeOpen: () => [workspaceOpen.value, vi.fn()]
+  useWorkspaceNodeOpen: () => [workspaceOpen.value, toggleWorkspace]
 }))
 
 // ProjectMenu (the kebab) has its own dedicated test file — stub it here so
@@ -64,6 +65,16 @@ const project = { id: 'p1', label: 'Test D' } as unknown as SidebarProjectTree
 const session = (id: string, updated: number): SessionInfo => ({ id, updated_at: updated }) as unknown as SessionInfo
 
 describe('ProjectOverviewRow', () => {
+  it('toggles the inline sessions when the project name is clicked', () => {
+    const onEnter = vi.fn()
+    render(<ProjectOverviewRow onEnter={onEnter} project={project} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Test D' }))
+
+    expect(toggleWorkspace).toHaveBeenCalledOnce()
+    expect(onEnter).not.toHaveBeenCalled()
+  })
+
   afterEach(() => {
     workspaceOpen.value = false
     projectsStore.fetchProjectSessions.mockReset()
