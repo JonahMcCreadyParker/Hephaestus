@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  addExpandedStarterPrompts,
   fillPrompt,
   groupedPrompts,
   parsePromptLibrary,
@@ -10,6 +11,17 @@ import {
 } from './prompt-templates'
 
 describe('prompt templates', () => {
+  it('adds two starters per genre once while preserving edits and deletions', () => {
+    const { categories, templates } = starterPrompts()
+    const edited = { ...templates[0], title: 'My plan', favorite: true }
+    const library = addExpandedStarterPrompts({ version: 1, categories, templates: [edited] })
+
+    expect(groupedPrompts(library, '').map(group => group.templates.length)).toEqual([3, 2, 2, 2, 2, 2, 2])
+    expect(library.templates[0]).toEqual(edited)
+    expect(library.templates.some(template => template.id === templates[1].id)).toBe(false)
+    expect(addExpandedStarterPrompts(library)).toBe(library)
+  })
+
   it('fills repeated fields literally without interpreting replacement syntax or nested placeholders', () => {
     const body = '{{project}}: {{tone|friendly}} / {{project}}'
 

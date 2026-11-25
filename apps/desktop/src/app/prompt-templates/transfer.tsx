@@ -72,7 +72,7 @@ export function TemplateTransfer() {
 
                   if (
                     savePromptLibrary({
-                      version: 1,
+                      ...current,
                       categories: [...new Set([...current.categories, ...imported.categories])],
                       templates: [
                         ...current.templates,

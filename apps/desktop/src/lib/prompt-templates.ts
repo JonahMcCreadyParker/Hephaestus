@@ -8,6 +8,7 @@ export interface PromptTemplate {
 
 export interface PromptLibrary {
   version: 1
+  starterRevision?: 1
   categories: string[]
   templates: PromptTemplate[]
 }
@@ -100,12 +101,83 @@ export function starterPrompts(): PromptLibrary {
       'Project milestones',
       'Break {{project_name}} into milestones for {{goal}}. Include dependencies, risks, and clear completion criteria.'
     ],
-    ['General', 'Explain this', 'Explain {{topic}} at a {{experience_level}} level, using a concrete example.']
+    ['General', 'Explain this', 'Explain {{topic}} at a {{experience_level}} level, using a concrete example.'],
+    [
+      'Coding & development',
+      'Diagnose a bug',
+      'Trace {{symptom}} in {{project_name}}. Identify a likely cause, propose the smallest fix, and explain how to verify it.'
+    ],
+    [
+      'Coding & development',
+      'Map a codebase',
+      'Map the entry points, main modules, and data flow for {{feature}} in {{project_name}}. Cite relevant files and explain where to start making changes.'
+    ],
+    [
+      'Code review & testing',
+      'Design regression tests',
+      'Design regression tests for {{change}}. Cover the normal path, relevant edge cases, and failure recovery. List the expected result for each case.'
+    ],
+    [
+      'Code review & testing',
+      'Triage failing checks',
+      'Analyze these failing checks and group them by likely root cause. Suggest the first diagnostic step for each group:\n\n{{test_output}}'
+    ],
+    [
+      'Email & inbox',
+      'Draft a reply',
+      'Draft a {{tone|professional}} reply to {{message}}. Address {{key_points}} and flag anything I should verify before sending.'
+    ],
+    [
+      'Email & inbox',
+      'Summarize a thread',
+      'Summarize {{email_thread}}. Extract decisions, unanswered questions, deadlines, and who owns each next action.'
+    ],
+    [
+      'Research',
+      'Compare sources',
+      'Compare these sources on {{question}}: {{sources}}. Identify agreements, disagreements, evidence quality, and gaps. Cite each source by claim.'
+    ],
+    [
+      'Research',
+      'Plan a literature search',
+      'Build a literature search plan for {{research_question}}. Suggest search terms, inclusion criteria, and a table for recording evidence.'
+    ],
+    [
+      'Writing & communication',
+      'Draft a status update',
+      'Draft a status update for {{audience}} based on {{notes}}. Include progress, blockers, and the next decision needed.'
+    ],
+    [
+      'Writing & communication',
+      'Outline a presentation',
+      'Outline a {{duration|5-minute}} presentation on {{topic}} for {{audience}}. Give each slide a takeaway and suggest supporting evidence.'
+    ],
+    [
+      'Planning & projects',
+      'Prioritize a backlog',
+      'Prioritize {{tasks}} against {{goal}}. Explain impact, effort, and dependencies, then suggest the first three tasks.'
+    ],
+    [
+      'Planning & projects',
+      'Prepare a handoff',
+      'Turn {{project_notes}} into a handoff for {{recipient}}. Include current state, relevant files, outstanding decisions, and the next action.'
+    ],
+    [
+      'General',
+      'Compare options',
+      'Compare {{options}} using {{criteria}}. Summarize the practical tradeoffs and explain what information would change the choice.'
+    ],
+    [
+      'General',
+      'Turn notes into actions',
+      'Organize {{notes}} into decisions, action items, and questions. Preserve any stated owners or deadlines.'
+    ]
   ]
 
   return {
     version: 1,
-    categories: examples.map(([category]) => category),
+    starterRevision: 1,
+    categories: [...new Set(examples.map(([category]) => category))],
     templates: examples.map(([category, title, body], index) => ({
       id: `example-${index}`,
       category,
@@ -114,6 +186,22 @@ export function starterPrompts(): PromptLibrary {
       favorite: false
     }))
   }
+}
+
+export function addExpandedStarterPrompts(library: PromptLibrary): PromptLibrary {
+  if (library.starterRevision === 1) {
+    return library
+  }
+
+  const existing = new Set(library.templates.map(template => template.id))
+  const categories = new Set(library.categories)
+
+  // Keep the seven original starter IDs out of the migration so a deletion stays deleted.
+  const additions = starterPrompts()
+    .templates.slice(7)
+    .filter(template => categories.has(template.category) && !existing.has(template.id))
+
+  return { ...library, starterRevision: 1, templates: [...library.templates, ...additions] }
 }
 
 export function promptDefaults(body: string): Record<string, string> {
