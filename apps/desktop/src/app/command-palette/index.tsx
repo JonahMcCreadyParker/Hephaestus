@@ -80,12 +80,11 @@ import { $cronSessions, $messagingSessions, $sessions } from '@/store/session'
 import { $unconfirmedPinWrites } from '@/store/session-pin-sync'
 import { $removedSessionIds } from '@/store/session-removal'
 import { runGatewayRestart } from '@/store/system-actions'
-import {
-  requestActiveUpdate
-} from '@/store/updates'
+import { requestActiveUpdate } from '@/store/updates'
 import { canOpenNewWindow, openNewWindow } from '@/store/windows'
 import { luminance } from '@/themes/color'
 import { type ThemeMode, useTheme } from '@/themes/context'
+import { HoldPreviewButton } from '@/themes/hold-preview-button'
 import { isUserTheme, resolveTheme } from '@/themes/user-themes'
 
 import { buildSessionByAnyId, resolvePinnedSessions } from '../chat/sidebar/session-index'
@@ -1516,8 +1515,12 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
     return map
   }, [visibleGroups])
 
+  const [highlightedValue, setHighlightedValue] = useState('')
+  const previewHighlighted = itemByValue.get(highlightedValue)?.onHighlight
+
   const handleHighlight = useCallback(
     (value: string) => {
+      setHighlightedValue(value)
       const item = itemByValue.get(value)
 
       if (item?.onHighlight) {
@@ -1593,6 +1596,7 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
           HUD_SURFACE,
           'z-(--z-over-modal-content) w-[min(34rem,calc(100vw-2rem))] overflow-hidden duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2 data-[state=open]:zoom-in-95'
         )}
+        data-theme-picker-surface=""
         // The close animation finishing is what retires this whole subtree —
         // the CSS owns the duration, not a hardcoded timer. Guarded on the
         // content itself (descendants animate too) and on the closed state, so
@@ -1669,6 +1673,11 @@ function CommandPaletteBody({ onExited }: { onExited: () => void }) {
               />
             )}
           </CommandList>
+          {previewHighlighted && (
+            <div className="flex justify-end border-t border-border p-2">
+              <HoldPreviewButton onHold={previewHighlighted} />
+            </div>
+          )}
         </Command>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>

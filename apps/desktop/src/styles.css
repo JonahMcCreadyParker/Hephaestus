@@ -794,6 +794,12 @@
     transition: opacity 160ms cubic-bezier(0.32, 0.72, 0, 1);
   }
 
+  [data-overlay-surface]:has([data-theme-preview-held]),
+  [data-theme-picker-surface]:has([data-theme-preview-held]) {
+    opacity: 0 !important;
+    transition: none !important;
+  }
+
   * {
     box-sizing: border-box;
     border-color: var(--dt-border);

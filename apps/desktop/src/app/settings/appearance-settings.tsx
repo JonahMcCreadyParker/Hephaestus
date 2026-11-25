@@ -70,6 +70,7 @@ import { $userBubbleTransparency, setUserBubbleTransparency } from '@/store/user
 import { $vibeHeartsEnabled, setVibeHeartsEnabled } from '@/store/vibe-hearts-enabled'
 import { $zoomPercent, setZoomPercent } from '@/store/zoom'
 import { getBaseColors, useTheme } from '@/themes/context'
+import { HoldPreviewButton } from '@/themes/hold-preview-button'
 import { installVscodeThemeFromMarketplace } from '@/themes/install'
 import type { DesktopTheme } from '@/themes/types'
 import { $marketplaceInstalls, isUserTheme, removeUserTheme } from '@/themes/user-themes'
@@ -412,7 +413,10 @@ interface AppearanceSettingsProps {
 
 export function AppearanceSettings({ subpage }: AppearanceSettingsProps = {}) {
   const { t, isSavingLocale } = useI18n()
-  const { themeName, mode, resolvedMode, availableThemes, setTheme, setMode } = useTheme()
+
+  const { themeName, mode, resolvedMode, availableThemes, setTheme, setMode, previewTheme, clearThemePreview } =
+    useTheme()
+
   const toolViewMode = useStore($toolViewMode)
   const toolViewShadowed = useStore($modeShadowed('toolViewMode'))
   const hideCodeDiffs = useStore($hideCodeDiffs)
@@ -629,6 +633,12 @@ export function AppearanceSettings({ subpage }: AppearanceSettingsProps = {}) {
                                   </div>
                                 </div>
                               </button>
+                              <HoldPreviewButton
+                                aria-label={`Hold to preview ${theme.label}`}
+                                className="mt-2 w-full"
+                                onHold={() => previewTheme(theme.name, resolvedMode)}
+                                onRelease={clearThemePreview}
+                              />
                               {removable && (
                                 <button
                                   aria-label={a.removeTheme}
