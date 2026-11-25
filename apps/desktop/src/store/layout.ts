@@ -254,11 +254,19 @@ export const $sidebarMessagingOpenIds = persistentAtom(
 // workspace's choice) — the "sidebar forgets my grouping every time I switch
 // workspaces" bug. The flat key keeps its historical name so an existing
 // choice survives the update.
-const $sidebarFlatAgentsGrouped = persistentAtom(SIDEBAR_AGENTS_GROUPED_STORAGE_KEY, false, Codecs.bool)
+const SIDEBAR_DEFAULT_GROUPING = 'project'
+const SIDEBAR_DEFAULT_FLAT_GROUPING = 'date'
+const SIDEBAR_DEFAULT_PROJECT_VIEW = true
+
+const $sidebarFlatAgentsGrouped = persistentAtom(
+  SIDEBAR_AGENTS_GROUPED_STORAGE_KEY,
+  SIDEBAR_DEFAULT_PROJECT_VIEW,
+  Codecs.bool
+)
 
 const $sidebarAllProfilesAgentsGrouped = persistentAtom(
   SIDEBAR_ALL_PROFILES_AGENTS_GROUPED_STORAGE_KEY,
-  false,
+  SIDEBAR_DEFAULT_PROJECT_VIEW,
   Codecs.bool
 )
 
@@ -326,7 +334,6 @@ const $sidebarAllProfilesGrouping = persistentAtom<SidebarGrouping>(
 // The sidebar as it ships. Declared once so the atoms below, "Reset to
 // defaults" and the "has this view been customized?" check can't drift apart —
 // they used to inline the same literals in three places.
-const SIDEBAR_DEFAULT_GROUPING: SidebarGrouping = 'date'
 const SIDEBAR_DEFAULT_ORDERING: SidebarOrdering = 'updated'
 const SIDEBAR_DEFAULT_ROW_META: SidebarRowMeta[] = ['preview', 'updated']
 
@@ -942,14 +949,13 @@ function clearSidebarFilters() {
 /** Every knob the filter menu owns, back to the sidebar as it ships. Ordering
  *  goes through its setter so a hand-dragged sequence is dropped along with it. */
 export function resetSidebarView() {
-  setSidebarGrouping(SIDEBAR_DEFAULT_GROUPING)
   // Both scopes, not just the one on screen: each keeps its own grouping (and
   // its own Project flag), so a reset that left the other customized would
   // hand it back on the next flip.
-  $sidebarFlatGrouping.set(SIDEBAR_DEFAULT_GROUPING)
-  $sidebarAllProfilesGrouping.set(SIDEBAR_DEFAULT_GROUPING)
-  $sidebarFlatAgentsGrouped.set(false)
-  $sidebarAllProfilesAgentsGrouped.set(false)
+  $sidebarFlatGrouping.set(SIDEBAR_DEFAULT_FLAT_GROUPING)
+  $sidebarAllProfilesGrouping.set(SIDEBAR_DEFAULT_FLAT_GROUPING)
+  $sidebarFlatAgentsGrouped.set(SIDEBAR_DEFAULT_PROJECT_VIEW)
+  $sidebarAllProfilesAgentsGrouped.set(SIDEBAR_DEFAULT_PROJECT_VIEW)
   setSidebarOrdering(SIDEBAR_DEFAULT_ORDERING)
   $sidebarRowMeta.set(SIDEBAR_DEFAULT_ROW_META)
   $sidebarCardRows.set(false)

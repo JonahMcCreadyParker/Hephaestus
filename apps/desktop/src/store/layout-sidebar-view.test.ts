@@ -50,7 +50,7 @@ describe('the sidebar as it ships', () => {
   })
 
   it('is what reset puts back — every knob, not just the filters', () => {
-    setSidebarGrouping('project')
+    setSidebarGrouping('date')
     setSidebarOrdering('cost')
     toggleSidebarRowMeta('updated')
     toggleSidebarRowMeta('cost')
@@ -58,19 +58,19 @@ describe('the sidebar as it ships', () => {
 
     resetSidebarView()
 
-    expect($sidebarGrouping.get()).toBe('date')
+    expect($sidebarGrouping.get()).toBe('project')
     expect($sidebarOrdering.get()).toBe('updated')
     expect($sidebarRowMeta.get()).toEqual(['preview', 'updated'])
     expect($sidebarViewCustomized.get()).toBe(false)
   })
 
-  it('ships by date in the all-profiles scope too, and resets back to it', () => {
+  it('ships by project in the all-profiles scope too, and resets back to it', () => {
     $showAllProfiles.set(true)
     setSidebarGrouping('profile')
 
     resetSidebarView()
 
-    expect($sidebarGrouping.get()).toBe('date')
+    expect($sidebarGrouping.get()).toBe('project')
     expect($sidebarViewCustomized.get()).toBe(false)
   })
 
@@ -82,7 +82,7 @@ describe('the sidebar as it ships', () => {
     resetSidebarView()
     $showAllProfiles.set(false)
 
-    expect($sidebarGrouping.get()).toBe('date')
+    expect($sidebarGrouping.get()).toBe('project')
   })
 
   it('turns all-profiles on when the user groups by profile, since that is the ask', () => {
